@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz do Corre Cidadão 🏖️</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilos básicos para garantir funcionamento */
+        body { font-family: sans-serif; background-color: #f3f4f6; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
+        .hidden { display: none; } /* Removi o !important que travava */
+        .flex { display: flex; }
+        
+        /* Animações */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        .spin-slow { animation: spin 8s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <!-- TELA INICIAL -->
+    <div id="screen-start" class="w-full max-w-md bg-gradient-to-br from-blue-500 to-teal-400 p-8 rounded-3xl shadow-2xl text-center text-white border border-white/20">
+        <div class="text-6xl mb-6 spin-slow inline-block">☀️</div>
+        <h1 class="text-4xl font-extrabold mb-4 drop-shadow-md">Quiz do Corre Cidadão 🏖️</h1>
+        <p class="text-lg mb-8 text-blue-50 font-medium">Bora testar se você tá ligado nos direitos, no SUAS e na cidadania carioca?</p>
+        <div class="bg-yellow-400/20 rounded-lg p-4 mb-8 text-sm text-yellow-100 font-bold border border-yellow-300/30">
+            ⚠️ Alerta de spoiler: Tem meme e gíria!
+        </div>
+        <button onclick="startGame()" class="w-full bg-yellow-400 hover:bg-yellow-300 text-blue-900 font-bold py-4 px-8 rounded-xl text-xl shadow-lg transform transition hover:scale-105 active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
+            ▶️ Bora começar!
+        </button>
+    </div>
+
+    <!-- TELA DO JOGO -->
+    <div id="screen-game" class="hidden w-full max-w-2xl flex-col">
+        <!-- Header -->
+        <div class="w-full mb-6 flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm">
+            <div class="text-sm font-bold text-gray-500">Questão <span id="question-number">1</span> de <span id="total-questions">10</span></div>
+            <div class="flex items-center gap-2">
+                <span class="text-sm font-bold text-purple-600">Pontos: <span id="score-display">0</span></span>
+            </div>
+        </div>
+
+        <!-- Barra de Progresso -->
+        <div class="w-full h-3 bg-gray-300 rounded-full mb-6 overflow-hidden">
+            <div id="progress-bar" class="h-full bg-gradient-to-r from-green-400 to-blue-500 transition-all duration-500 ease-out" style="width: 0%"></div>
+        </div>
+
+        <!-- Card da Pergunta -->
+        <div class="bg-white p-6 md:p-8 rounded-3xl shadow-xl w-full relative animate-fade-in">
+            <div class="absolute -top-6 -right-6 hidden md:block text-6xl rotate-12">🏖️</div>
+            
+            <h2 id="question-text" class="text-xl md:text-2xl font-bold text-gray-800 mb-6 leading-tight">Carregando...</h2>
+
+            <div id="options-container" class="space-y-3">
+                <!-- Opções inseridas via JS -->
+            </div>
+
+            <!-- Feedback -->
+            <div id="feedback-area" class="hidden mt-6 animate-fade-in">
+                <div id="feedback-box" class="p-4 rounded-xl mb-4 border">
+                    <p id="feedback-title" class="font-bold mb-1 text-sm uppercase tracking-wide"></p>
+                    <p id="feedback-text" class="text-gray-800"></p>
+                </div>
+                <button onclick="nextQuestion()" id="btn-next" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition flex items-center justify-center gap-2 cursor-pointer">
+                    Próxima Pergunta ➡️
+                </button>
+            </div>
+
+            <!-- Dica -->
+            <div id="hint-area" class="mt-6 text-center">
+                <p class="text-sm text-gray-400 italic">💡 Dica: <span id="hint-text"></span></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- TELA DE RESULTADO -->
+    <div id="screen-result" class="hidden w-full max-w-md bg-gradient-to-br from-purple-600 to-indigo-600 p-8 rounded-3xl shadow-2xl text-center text-white relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-red-500 via-yellow-500 to-green-500"></div>
+        <div class="flex justify-center mb-4 text-8xl">🏆</div>
+        <h2 id="result-title" class="text-3xl font-black mb-2 text-purple-200"></h2>
+        <div class="text-6xl font-bold mb-4 text-white"><span id="final-score">0</span>/<span id="total-final">10</span></div>
+        <p id="result-text" class="text-lg mb-6 text-gray-200 leading-relaxed"></p>
+        <div id="result-emoji" class="text-4xl mb-8 animate-bounce"></div>
+        <button onclick="restartGame()" class="w-full bg-purple-500 hover:bg-purple-400 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition flex items-center justify-center gap-2 cursor-pointer">
+            🔄 Tentar de novo
+        </button>
+    </div>
+
+    <script>
+        // DADOS
+        const questions = [
+            {
+                question: "Se o Brasil fosse uma escola de samba, quem seria o 'Samba-Enredo' oficial que garante a harmonia e os direitos da galera desde 1988?",
+                options: [
+                    { text: "A Constituição Cidadã", correct: true, rationale: "É isso aí! A Constituição de 1988 é a 'braba', a lei máxima que trouxe a democracia e garantiu nossos direitos fundamentais. Nota 10 em cidadania!" },
+                    { text: "O Regulamento do Brasileirão", correct: false, rationale: "O futebol é sagrado, mas as regras do país estão em outro livro, mermão." },
+                    { text: "O Manual de Instruções do BRT", correct: false, rationale: "Se existisse, seria complexo, mas não garante direitos sociais pra ninguém." },
+                    { text: "As Regras do Zap da Família", correct: false, rationale: "Essas regras são importantes pra evitar treta no domingo, mas não valem pro país todo." }
+                ],
+                hint: "Ela é conhecida como 'Cidadã' e é a lei máxima."
+            },
+            {
+                question: "Tá rolando aquele calor de 40º no Rio e você decide ir à praia. O que define ser um cidadão 'responsa'?",
+                options: [
+                    { text: "Só votar a cada dois anos e reclamar", correct: false, rationale: "Votar é importante, mas cidadania é 'todo dia'. Reclamar na rede social não resolve tudo." },
+                    { text: "Ter direitos (saúde/lazer) e deveres", correct: true, rationale: "Mandou bem! Cidadania é uma via de mão dupla: você tem direitos garantidos, mas também tem deveres com a sociedade." },
+                    { text: "Ter um perfil verificado no Instagram", correct: false, rationale: "Fama digital não é documento de cidadania, parça." },
+                    { text: "Furar a fila do Metrô na hora do rush", correct: false, rationale: "Aí você tá erradíssimo e desrespeitando a lei! Cidadania passa longe disso." }
+                ],
+                hint: "É o combo completo: cobrar o que é seu, mas também fazer a sua parte."
+            },
+            {
+                question: "O SUAS entra em campo pra organizar a assistência social. Qual é a pegada principal dele?",
+                options: [
+                    { text: "Dar likes nas fotos da galera", correct: false, rationale: "O SUAS é sistema sério de política pública, não rede social." },
+                    { text: "Garantir direitos e proteção aos vulneráveis", correct: true, rationale: "Na mosca! O SUAS coordena os serviços pra proteger quem mais precisa e prevenir riscos sociais." },
+                    { text: "Organizar os blocos de carnaval", correct: false, rationale: "Isso é com a prefeitura e os organizadores, o SUAS foca em proteção social." },
+                    { text: "Distribuir ingressos pro Rock in Rio", correct: false, rationale: "Seria um sonho, né? Mas o foco do SUAS é assistência, não entretenimento de luxo." }
+                ],
+                hint: "Ele funciona de forma integrada pra não deixar ninguém desamparado na 'pista'."
+            },
+            {
+                question: "Falando em SUAS, temos o CRAS. Pense nele como o 'ponto de encontro' no bairro. Pra que serve o CRAS?",
+                options: [
+                    { text: "Tratar violações graves já ocorridas", correct: false, rationale: "Calma, quando o bicho pega e o direito JÁ foi violado, o papo é com outro equipamento (o CREAS)." },
+                    { text: "Porta de entrada: previne riscos e fortalece vínculos", correct: true, rationale: "Boa! O CRAS é Proteção Básica. É lá que rola o cadastro no CadÚnico e projetos pra evitar que os problemas aconteçam." },
+                    { text: "Tirar 2ª via de identidade", correct: false, rationale: "Isso é no Detran, o CRAS é focado na assistência social e convivência." },
+                    { text: "Marcar churrasco da comunidade", correct: false, rationale: "Embora fortaleça vínculos, o CRAS é um órgão oficial com assistentes sociais e psicólogos." }
+                ],
+                hint: "Fica perto da casa e trabalha na PREVENÇÃO."
+            },
+            {
+                question: "Se a chapa esquentou e rolou violação de direitos (violência, abandono), quem entra é o CREAS. Qual a diferença pro CRAS?",
+                options: [
+                    { text: "CREAS é Proteção Especial (risco virou realidade)", correct: true, rationale: "Certíssimo! Enquanto o CRAS previne, o CREAS acolhe quem já teve direitos violados. É mais especializado." },
+                    { text: "CREAS é só pra quem mora na Barra", correct: false, rationale: "Nada a ver! O sistema é único pro Brasil todo." },
+                    { text: "CREAS serve pra organizar futebol", correct: false, rationale: "Esporte é bom, mas o CREAS cuida de questões sociais complexas." },
+                    { text: "Não tem diferença, só muda a letra", correct: false, rationale: "Tem muita diferença! Um é básico (prevenção), o outro é especial (violação)." }
+                ],
+                hint: "Um trabalha antes do problema, o outro depois."
+            },
+            {
+                question: "O CadÚnico é tipo a 'Lista VIP' dos programas sociais. Quem pode entrar nessa lista?",
+                options: [
+                    { text: "Só quem tem carro do ano", correct: false, rationale: "Ao contrário! O CadÚnico foca no perfil socioeconômico de quem precisa de apoio." },
+                    { text: "Famílias de baixa renda", correct: true, rationale: "É isso! Ele mapeia quem precisa pra dar acesso a programas como Bolsa Família, Tarifa Social e outros." },
+                    { text: "Qualquer um com CPF e conta no Tik Tok", correct: false, rationale: "Ter CPF é preciso, mas tem critério de renda pra entrar no cadastro, beleza?" },
+                    { text: "Apenas jovens funkeiros", correct: false, rationale: "Gosto musical não é critério, parceiro. É a situação econômica da família que conta." }
+                ],
+                hint: "É a base de dados pra saber quem precisa de uma força do governo."
+            },
+            {
+                question: "O SUS é nosso e ninguém tasca! Onde mais você encontra o SUS além do hospital?",
+                options: [
+                    { text: "Só na emergência", correct: false, rationale: "O SUS salva na emergência, mas faz muito mais que isso." },
+                    { text: "Na vigilância sanitária e vacinas", correct: true, rationale: "Perfeito! Aquele lanche seguro (Vigilância) e a vacina no braço (Zé Gotinha) são garantidos pelo SUS." },
+                    { text: "Loja de suplemento", correct: false, rationale: "Aí é comércio privado. O SUS cuida da saúde pública." },
+                    { text: "No iFood", correct: false, rationale: "O app entrega, mas quem vigia se a comida tá higiênica é a Vigilância Sanitária do SUS!" }
+                ],
+                hint: "Fiscaliza até a água que você bebe."
+            },
+            {
+                question: "O que são 'Políticas Públicas'? Nada de papo furado!",
+                options: [
+                    { text: "Postagens patrocinadas", correct: false, rationale: "Isso é marketing. Política Pública é ação concreta." },
+                    { text: "Ações do Estado pra garantir direitos", correct: true, rationale: "Mandou a visão correta! É quando o governo se mexe pra garantir saúde, educação, transporte, etc." },
+                    { text: "Promessas vazias", correct: false, rationale: "A gente sabe que às vezes demora, mas Política Pública é o planejamento e a execução oficial." },
+                    { text: "Reunião de condomínio", correct: false, rationale: "Isso é privado. Política Pública visa o bem-estar de toda a população." }
+                ],
+                hint: "Soluções criadas pelo Estado pra vida da galera (tipo Bilhete Único)."
+            },
+            {
+                question: "Qual desses NÃO é um direito social previsto na Constituição?",
+                options: [
+                    { text: "Educação e Saúde", correct: false, rationale: "Esses são fundamentais e estão lá no Artigo 6º." },
+                    { text: "Ter um PS5 ou Xbox Series X", correct: true, rationale: "Seria top, mas videogame é bem de consumo, não é um direito social garantido pelo Estado." },
+                    { text: "Moradia e Alimentação", correct: false, rationale: "Básico pra viver, né? São direitos sociais sim." },
+                    { text: "Trabalho e Lazer", correct: false, rationale: "Pode acreditar, lazer também é direito social! A mente precisa descansar." }
+                ],
+                hint: "Direito social é essencial pra vida. Eletrônico caro é luxo."
+            },
+            {
+                question: "Qual é a sua missão como Jovem Aprendiz nessa parada toda?",
+                options: [
+                    { text: "Ficar quieto no canto", correct: false, rationale: "Nada disso! Jovem Aprendiz tem voz e futuro." },
+                    { text: "Ser apenas usuário", correct: false, rationale: "Você pode usar os serviços, mas seu papel vai além." },
+                    { text: "Ser agente de mudança e multiplicador", correct: true, rationale: "Fechou com chave de ouro! Você aprendeu, agora passa a visão pros amigos. Conhecimento é poder!" },
+                    { text: "Decorar pra prova", correct: false, rationale: "O objetivo é levar pra vida, não só pra passar no teste." }
+                ],
+                hint: "O conhecimento não pode parar em você. Passa a visão!"
+            }
+        ];
+
+        // LÓGICA
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let canClick = true;
+
+        const screenStart = document.getElementById('screen-start');
+        const screenGame = document.getElementById('screen-game');
+        const screenResult = document.getElementById('screen-result');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackArea = document.getElementById('feedback-area');
+        const feedbackBox = document.getElementById('feedback-box');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const feedbackText = document.getElementById('feedback-text');
+        const hintArea = document.getElementById('hint-area');
+        const hintText = document.getElementById('hint-text');
+        const btnNext = document.getElementById('btn-next');
+        const progressBar = document.getElementById('progress-bar');
+        const scoreDisplay = document.getElementById('score-display');
+        const questionNumber = document.getElementById('question-number');
+        const totalQuestions = document.getElementById('total-questions');
+
+        function startGame() {
+            // Esconde a inicial e mostra o jogo
+            screenStart.classList.add('hidden');
+            screenGame.classList.remove('hidden');
+            screenGame.classList.add('flex');
+            
+            score = 0;
+            currentQuestionIndex = 0;
+            scoreDisplay.innerText = '0';
+            totalQuestions.innerText = questions.length;
+            
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            canClick = true;
+            const q = questions[currentQuestionIndex];
+            
+            questionText.innerText = q.question;
+            hintText.innerText = q.hint;
+            questionNumber.innerText = currentQuestionIndex + 1;
+            
+            const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+            progressBar.style.width = progress + '%';
+
+            feedbackArea.classList.add('hidden');
+            hintArea.classList.remove('hidden');
+            optionsContainer.innerHTML = '';
+
+            q.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-4 rounded-xl transition-all duration-200 flex items-center justify-between gap-3 bg-gray-50 border-2 border-gray-200 hover:border-blue-400 hover:bg-blue-50 text-gray-700 cursor-pointer mb-3";
+                btn.innerHTML = `<span>${opt.text}</span>`;
+                btn.onclick = function() { checkAnswer(opt, btn); };
+                optionsContainer.appendChild(btn);
+            });
+
+            btnNext.innerText = (currentQuestionIndex < questions.length - 1) ? 'Próxima Pergunta ➡️' : 'Ver Resultado 🏆';
+        }
+
+        function checkAnswer(selectedOpt, btnElement) {
+            if (!canClick) return;
+            canClick = false;
+
+            feedbackArea.classList.remove('hidden');
+            hintArea.classList.add('hidden');
+
+            const allButtons = optionsContainer.querySelectorAll('button');
+            allButtons.forEach(btn => {
+                btn.disabled = true;
+                btn.classList.add('opacity-70', 'cursor-not-allowed');
+                const btnText = btn.querySelector('span').innerText;
+                const isCorrect = questions[currentQuestionIndex].options.find(o => o.text === btnText).correct;
+                if (isCorrect) {
+                    btn.classList.remove('bg-gray-50', 'border-gray-200', 'opacity-70');
+                    btn.classList.add('bg-green-100', 'border-green-500', 'text-green-900', 'font-bold');
+                    btn.innerHTML += '<span class="text-xl">✅</span>';
+                }
+            });
+
+            if (!selectedOpt.correct) {
+                btnElement.classList.remove('bg-gray-50', 'border-gray-200', 'opacity-70');
+                btnElement.classList.add('bg-red-100', 'border-red-500', 'text-red-900');
+                btnElement.innerHTML += '<span class="text-xl">❌</span>';
+            } else {
+                score++;
+                scoreDisplay.innerText = score;
+            }
+
+            const correctOpt = questions[currentQuestionIndex].options.find(o => o.correct);
+            if (selectedOpt.correct) {
+                feedbackBox.className = "p-4 rounded-xl mb-4 border bg-green-50 border-green-200";
+                feedbackTitle.innerText = "MANDOU BEM!";
+                feedbackTitle.className = "font-bold mb-1 text-sm uppercase tracking-wide text-green-700";
+            } else {
+                feedbackBox.className = "p-4 rounded-xl mb-4 border bg-red-50 border-red-200";
+                feedbackTitle.innerText = "IH, ERROU!";
+                feedbackTitle.className = "font-bold mb-1 text-sm uppercase tracking-wide text-red-700";
+            }
+            feedbackText.innerText = correctOpt.rationale;
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        function showResult() {
+            screenGame.classList.add('hidden');
+            screenGame.classList.remove('flex');
+            screenResult.classList.remove('hidden');
+            screenResult.classList.add('block');
+
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('total-final').innerText = questions.length;
+
+            const percentage = (score / questions.length) * 100;
+            const rTitle = document.getElementById('result-title');
+            const rText = document.getElementById('result-text');
+            const rEmoji = document.getElementById('result-emoji');
+
+            if (percentage === 100) {
+                rTitle.innerText = "Mestre da Cidadania! 👑";
+                rText.innerText = "Tu amassou! Gabaritou tudo. Já pode se candidatar a síndico do Rio ou dar aula sobre o SUAS. Parabéns!";
+                rEmoji.innerText = "😎🔥";
+            } else if (percentage >= 70) {
+                rTitle.innerText = "Mandou Muito Bem! 🚀";
+                rText.innerText = "Tá ligado na parada! Errou quase nada. Você é um cidadão responsa e tá pronto pro mercado.";
+                rEmoji.innerText = "👏👏";
+            } else if (percentage >= 40) {
+                rTitle.innerText = "Tá na Média! 😐";
+                rText.innerText = "Não passou vergonha, mas também não brilhou. Vale dar uma revisada no conteúdo pra ficar afiado.";
+                rEmoji.innerText = "📚✍️";
+            } else {
+                rTitle.innerText = "Ih, Deu Ruim! 😵";
+                rText.innerText = "Queimou o filme, parceiro! Precisa focar mais nas aulas. Cidadania e SUAS são importantes pra tua vida, não vacila!";
+                rEmoji.innerText = "📉🤡";
+            }
+        }
+
+        function restartGame() {
+            screenResult.classList.add('hidden');
+            screenResult.classList.remove('block');
+            startGame();
+        }
+    </script>
+</body>
+</html>
