@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Correio Corporativo - Jovem Aprendiz 📧</title>
+    <!-- Tailwind CSS (Se falhar, o CSS abaixo segura as pontas) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Roboto', sans-serif; background-color: #f3f4f6; }
+        
+        /* CORREÇÃO CRÍTICA: Garante que o hidden funcione */
+        .d-none { display: none !important; }
+        .d-flex { display: flex !important; }
+        
+        /* Animações */
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-slide { animation: slideIn 0.3s ease-out forwards; }
+        
+        @keyframes pulse-light { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        .animate-pulse-slow { animation: pulse-light 2s infinite; }
+
+        /* Estilo Outlook/Gmail */
+        .email-list-item:hover { background-color: #e5e7eb; border-left: 4px solid #2563eb; }
+        .email-list-item.active { background-color: #dbeafe; border-left: 4px solid #2563eb; }
+        
+        /* Botões de Ação */
+        .action-btn { transition: all 0.2s; }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden bg-gray-100 text-gray-800">
+
+    <!-- TELA 1: INTRODUÇÃO -->
+    <div id="screen-intro" class="fixed inset-0 z-50 bg-gray-900/90 d-flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white w-full max-w-md p-8 rounded-2xl shadow-2xl text-center border-t-8 border-blue-600 animate-slide">
+            <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6 text-blue-600">
+                <!-- Icone Mail -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">Desafio: Primeiro Dia no Escritório</h1>
+            <p class="text-gray-600 mb-8 text-sm leading-relaxed">
+                Você é o novo assistente administrativo! 👔<br>
+                Sua caixa de entrada está cheia. Sua missão é ler os e-mails e tomar a <strong>decisão profissional correta</strong> para cada um.
+            </p>
+            <div class="bg-blue-50 p-4 rounded-lg text-left text-xs text-blue-800 mb-8 border border-blue-100">
+                <strong>Dicas Rápidas:</strong>
+                <ul class="list-disc pl-4 mt-2 space-y-1">
+                    <li>Chefe/Cliente = Formalidade</li>
+                    <li>Colega Próximo = Pode ser informal</li>
+                    <li>Arquivos Importantes = Salvar na Nuvem</li>
+                    <li>Spam/Corrente = Lixeira</li>
+                </ul>
+            </div>
+            <button onclick="startGame()" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition shadow-lg flex items-center justify-center gap-2 cursor-pointer">
+                ABRIR E-MAIL 🚀
+            </button>
+        </div>
+    </div>
+
+    <!-- TELA 2: INTERFACE DE E-MAIL (O JOGO) -->
+    <div id="screen-game" class="flex-1 flex flex-col h-full d-none">
+        
+        <!-- Header -->
+        <header class="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 shadow-sm z-10">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 p-2 rounded-lg text-white">
+                    <!-- Icone Inbox -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+                </div>
+                <h1 class="font-bold text-xl text-gray-700 hidden md:block">CorpMail</h1>
+            </div>
+            
+            <!-- Placar -->
+            <div class="flex items-center gap-6 bg-gray-50 px-4 py-2 rounded-full border border-gray-200">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-gray-400 uppercase">E-mails</span>
+                    <span class="font-bold text-blue-600"><span id="current-email-count">1</span>/6</span>
+                </div>
+                <div class="w-px h-4 bg-gray-300"></div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-gray-400 uppercase">Pontos</span>
+                    <span id="score-display" class="font-bold text-green-600">0</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-bold text-xs border border-purple-200">JA</div>
+            </div>
+        </header>
+
+        <!-- Corpo Principal -->
+        <div class="flex-1 flex overflow-hidden">
+            
+            <!-- Sidebar (Lista de E-mails) - Simulada -->
+            <aside class="w-80 bg-white border-r border-gray-200 flex-col hidden md:flex">
+                <div class="p-4 border-b border-gray-100">
+                    <button class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold text-sm shadow-sm flex items-center justify-center gap-2 cursor-default">
+                        <!-- Icone Plus -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                        Novo E-mail
+                    </button>
+                </div>
+                <div class="flex-1 overflow-y-auto">
+                    <!-- Item Ativo Simulado -->
+                    <div class="email-list-item active p-4 cursor-pointer">
+                        <div class="flex justify-between mb-1">
+                            <span class="font-bold text-sm text-gray-800" id="sidebar-sender">...</span>
+                            <span class="text-xs text-gray-400">10:42</span>
+                        </div>
+                        <p class="text-sm font-medium text-gray-600 truncate" id="sidebar-subject">...</p>
+                        <p class="text-xs text-gray-400 truncate">Clique para ver mais detalhes...</p>
+                    </div>
+                    <!-- Itens Passados/Futuros (Visuais) -->
+                    <div class="p-4 border-b border-gray-100 opacity-50">
+                        <div class="w-24 h-3 bg-gray-200 rounded mb-2"></div>
+                        <div class="w-full h-2 bg-gray-100 rounded"></div>
+                    </div>
+                    <div class="p-4 border-b border-gray-100 opacity-30">
+                        <div class="w-24 h-3 bg-gray-200 rounded mb-2"></div>
+                        <div class="w-full h-2 bg-gray-100 rounded"></div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Área de Leitura (E-mail Aberto) -->
+            <main class="flex-1 bg-white flex flex-col relative">
+                
+                <!-- Toolbar -->
+                <div class="h-14 border-b border-gray-200 flex items-center px-6 gap-4 bg-gray-50/50">
+                    <button class="text-gray-400 hover:text-gray-600 cursor-not-allowed">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+                    </button>
+                    <button class="text-gray-400 hover:text-gray-600 cursor-not-allowed">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                    </button>
+                    <div class="w-px h-6 bg-gray-300 mx-2"></div>
+                    <button class="text-gray-400 hover:text-gray-600 cursor-not-allowed">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 2H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+                    </button>
+                </div>
+
+                <!-- Conteúdo do E-mail -->
+                <div class="flex-1 p-6 overflow-y-auto animate-slide" id="email-content-area">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-2" id="email-subject">Assunto do E-mail</h2>
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm" id="sender-avatar">
+                                    CH
+                                </div>
+                                <div>
+                                    <p class="font-bold text-sm text-gray-900"><span id="email-from">Chefe</span> <span class="text-gray-400 font-normal">&lt;chefe@empresa.com&gt;</span></p>
+                                    <p class="text-xs text-gray-500">Para: Você</p>
+                                </div>
+                            </div>
+                        </div>
+                        <span class="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded border border-gray-200">Entrada</span>
+                    </div>
+
+                    <div class="prose max-w-none text-gray-700 text-sm leading-relaxed border-t border-gray-100 pt-6" id="email-body">
+                        <!-- Texto do e-mail vai aqui -->
+                    </div>
+
+                    <!-- Anexo (Se houver) -->
+                    <div id="attachment-area" class="hidden mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg flex items-center gap-3 w-max">
+                        <div class="bg-red-100 p-2 rounded text-red-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-gray-700" id="att-name">Relatorio.pdf</p>
+                            <p class="text-xs text-gray-400">2.4 MB</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Área de Decisão (Footer) -->
+                <div class="bg-gray-50 border-t border-gray-200 p-6">
+                    <p class="text-sm font-bold text-gray-500 mb-4 uppercase tracking-wider flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-500"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> 
+                        Sua Ação:
+                    </p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="options-container">
+                        <!-- Botões de opção inseridos via JS -->
+                    </div>
+                </div>
+
+                <!-- Feedback Overlay -->
+                <div id="feedback-overlay" class="d-none absolute inset-0 bg-white/95 z-20 flex flex-col items-center justify-center text-center p-8 animate-slide">
+                    <div id="feedback-icon" class="mb-4"></div>
+                    <h3 id="feedback-title" class="text-2xl font-bold mb-2"></h3>
+                    <p id="feedback-message" class="text-gray-600 mb-6 max-w-md"></p>
+                    <button onclick="nextEmail()" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition shadow-md cursor-pointer">
+                        Próximo E-mail ➡️
+                    </button>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- TELA 3: RESULTADO FINAL -->
+    <div id="screen-result" class="fixed inset-0 z-50 bg-gray-900 flex items-center justify-center d-none">
+        <div class="bg-white w-full max-w-md p-8 rounded-2xl shadow-2xl text-center relative overflow-hidden animate-slide">
+            <!-- Confete CSS -->
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+            
+            <div class="w-24 h-24 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6 text-yellow-600 animate-pulse-slow">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+            </div>
+            
+            <h2 class="text-3xl font-black text-gray-800 mb-1" id="result-title">Mandou Bem!</h2>
+            <p class="text-sm font-bold text-blue-600 uppercase tracking-widest mb-6">Relatório de Desempenho</p>
+
+            <div class="flex justify-center gap-8 mb-8 border-t border-b border-gray-100 py-6">
+                <div>
+                    <span class="block text-4xl font-black text-gray-900" id="final-score">0</span>
+                    <span class="text-xs text-gray-400 font-bold uppercase">Acertos</span>
+                </div>
+                <div>
+                    <span class="block text-4xl font-black text-gray-900">6</span>
+                    <span class="text-xs text-gray-400 font-bold uppercase">Total</span>
+                </div>
+            </div>
+
+            <p class="text-gray-600 text-sm mb-8 bg-gray-50 p-4 rounded-lg border border-gray-100" id="final-msg">
+                ...
+            </p>
+
+            <button onclick="location.reload()" class="w-full py-3 bg-gray-800 hover:bg-gray-900 text-white font-bold rounded-lg transition shadow-lg cursor-pointer">
+                🔄 Reiniciar Treinamento
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- DADOS DOS E-MAILS ---
+        const emails = [
+            {
+                id: 1,
+                from: "Diretora Cláudia",
+                email: "diretoria@empresa.com",
+                avatar: "DC",
+                subject: "Solicitação de Relatório Mensal",
+                body: "Bom dia. <br><br>Preciso que você me envie o relatório de atividades da sua equipe até o final do dia. <br><br>Att,<br>Cláudia.",
+                attachment: null,
+                options: [
+                    { text: "Responder: 'Pode deixar, Claudinha! Tmj 👊'", correct: false, feedback: "Informal demais! Com diretores, mantenha a formalidade.", icon: "❌" },
+                    { text: "Ignorar (Vou mandar depois)", correct: false, feedback: "Erro! É importante confirmar o recebimento de solicitações da chefia.", icon: "❌" },
+                    { text: "Responder Formalmente: 'Bom dia, Sra. Cláudia. Recebido, enviarei até o fim do dia.'", correct: true, feedback: "Perfeito! Educação e confirmação profissional.", icon: "✅" }
+                ]
+            },
+            {
+                id: 2,
+                from: "Marcelo (TI)",
+                email: "suporte@empresa.com",
+                avatar: "MT",
+                subject: "URGENTE: Atualize sua senha agora",
+                body: "Olá usuário, <br><br>Sua senha expirou. Clique no link suspeito abaixo para renovar ou sua conta será deletada em 1 hora!!! <br><br>Link: www.site-estranho.com/virus",
+                attachment: null,
+                options: [
+                    { text: "Clicar no link e trocar a senha", correct: false, feedback: "Cuidado! Isso é Phishing (Golpe). O TI nunca pede senha por link suspeito.", icon: "⚠️" },
+                    { text: "Reportar como Spam/Phishing e deletar", correct: true, feedback: "Boa! Você identificou o golpe e protegeu a empresa.", icon: "🛡️" },
+                    { text: "Responder perguntando se é verdade", correct: false, feedback: "Não responda a e-mails suspeitos. Apenas reporte ao TI oficial.", icon: "❌" }
+                ]
+            },
+            {
+                id: 3,
+                from: "Pedro (Estagiário)",
+                email: "pedro.silva@empresa.com",
+                avatar: "PS",
+                subject: "Planilha de Vendas Finalizada",
+                body: "Fala! Terminei aquela planilha que você pediu. Segue em anexo para a gente não perder. Onde eu salvo?",
+                attachment: { name: "Vendas_2024.xlsx", size: "15 KB" },
+                options: [
+                    { text: "Responder: 'Valeu!' e deixar no e-mail", correct: false, feedback: "Deixar só no e-mail é perigoso e desorganizado. Use a nuvem.", icon: "❌" },
+                    { text: "Baixar e Salvar na Nuvem (Drive/OneDrive) da equipe", correct: true, feedback: "Excelente! A nuvem é o local seguro e colaborativo para arquivos da empresa.", icon: "☁️" },
+                    { text: "Salvar na Área de Trabalho do PC", correct: false, feedback: "Se o PC queimar, o arquivo some. A Nuvem é mais segura.", icon: "❌" }
+                ]
+            },
+            {
+                id: 4,
+                from: "Equipe de Eventos",
+                email: "eventos@empresa.com",
+                avatar: "EV",
+                subject: "Convite: Happy Hour Sexta-feira! 🍻",
+                body: "Olá time! <br><br>Vamos nos reunir no bar da esquina sexta às 18h. Quem vai? <br><br>Respondam a este e-mail.",
+                attachment: null,
+                options: [
+                    { text: "Responder a Todos: 'Eu vou! Uhuu!'", correct: false, feedback: "Cuidado com o 'Responder a Todos' em e-mails com muita gente. Enche a caixa de quem não vai.", icon: "⚠️" },
+                    { text: "Responder apenas ao Remetente (Eventos)", correct: true, feedback: "Correto! Só quem organiza precisa saber sua resposta.", icon: "✅" },
+                    { text: "Marcar como Spam", correct: false, feedback: "Não é spam, é um evento da empresa. Seja sociável, mas profissional.", icon: "❌" }
+                ]
+            },
+            {
+                id: 5,
+                from: "Cliente Importante",
+                email: "cliente@loja.com",
+                avatar: "CI",
+                subject: "Reclamação: Atraso na entrega",
+                body: "Prezados, meu pedido não chegou. Estou muito insatisfeito com o serviço de vocês. Aguardo solução imediata.",
+                attachment: null,
+                options: [
+                    { text: "Responder: 'Calma aí, já vejo.'", correct: false, feedback: "Nunca peça 'calma' a um cliente bravo nem seja informal. Piora a situação.", icon: "❌" },
+                    { text: "Ignorar por enquanto (medo de responder)", correct: false, feedback: "Deixar o cliente esperando aumenta a insatisfação.", icon: "❌" },
+                    { text: "Responder com Empatia e Formalidade", correct: true, feedback: "Isso! Peça desculpas, mostre que se importa e dê um prazo de solução.", icon: "🤝" }
+                ]
+            },
+            {
+                id: 6,
+                from: "Gestor de Projetos",
+                email: "gestor@empresa.com",
+                avatar: "GP",
+                subject: "Envio de Orçamento para Fornecedores",
+                body: "Por favor, envie esse pedido de orçamento para os 5 fornecedores da lista. <br><br>Não quero que um fornecedor veja o e-mail do outro.",
+                attachment: null,
+                options: [
+                    { text: "Colocar todos em 'Para' (Destinatário)", correct: false, feedback: "Erro! Assim todos veem os e-mails uns dos outros. Viola a privacidade.", icon: "❌" },
+                    { text: "Colocar todos em 'Cco' (Cópia Oculta)", correct: true, feedback: "Perfeito! O Cco esconde a lista. Ideal para orçamentos ou comunicados em massa.", icon: "🔒" },
+                    { text: "Colocar todos em 'Cc' (Cópia)", correct: false, feedback: "O Cc também mostra a lista para todos. Use Cco.", icon: "❌" }
+                ]
+            }
+        ];
+
+        let currentEmailIndex = 0;
+        let score = 0;
+
+        function startGame() {
+            // Garante que a tela de resultado e feedback estão escondidas
+            document.getElementById('screen-result').classList.add('d-none');
+            document.getElementById('feedback-overlay').classList.add('d-none');
+            
+            // Esconde intro e mostra jogo
+            document.getElementById('screen-intro').classList.remove('d-flex');
+            document.getElementById('screen-intro').classList.add('d-none');
+            
+            document.getElementById('screen-game').classList.remove('d-none');
+            document.getElementById('screen-game').classList.add('d-flex');
+            
+            // Reseta variáveis
+            currentEmailIndex = 0;
+            score = 0;
+            document.getElementById('score-display').innerText = '0';
+            
+            loadEmail();
+        }
+
+        function loadEmail() {
+            const email = emails[currentEmailIndex];
+            
+            // Atualiza Sidebar (Visual)
+            document.getElementById('sidebar-sender').innerText = email.from;
+            document.getElementById('sidebar-subject').innerText = email.subject;
+            
+            // Atualiza Header Info
+            document.getElementById('current-email-count').innerText = currentEmailIndex + 1;
+
+            // Atualiza Conteúdo
+            document.getElementById('email-subject').innerText = email.subject;
+            document.getElementById('email-from').innerText = email.from;
+            document.getElementById('sender-avatar').innerText = email.avatar;
+            document.getElementById('email-body').innerHTML = email.body;
+
+            // Anexo
+            const attArea = document.getElementById('attachment-area');
+            if (email.attachment) {
+                attArea.classList.remove('hidden');
+                attArea.classList.add('flex');
+                document.getElementById('att-name').innerText = email.attachment.name;
+            } else {
+                attArea.classList.add('hidden');
+                attArea.classList.remove('flex');
+            }
+
+            // Opções
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = ''; // Limpa anteriores
+
+            // Embaralha opções
+            const shuffledOptions = [...email.options].sort(() => Math.random() - 0.5);
+
+            shuffledOptions.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "action-btn w-full p-4 bg-white border border-gray-200 rounded-xl text-left hover:border-blue-500 hover:bg-blue-50 hover:text-blue-700 transition flex flex-col gap-1 shadow-sm";
+                btn.innerHTML = `<span class="font-medium text-sm">${opt.text}</span>`;
+                btn.onclick = () => handleDecision(opt);
+                optionsContainer.appendChild(btn);
+            });
+
+            // Esconde Feedback com classe robusta
+            document.getElementById('feedback-overlay').classList.add('d-none');
+            document.getElementById('feedback-overlay').classList.remove('d-flex');
+        }
+
+        function handleDecision(option) {
+            const overlay = document.getElementById('feedback-overlay');
+            const iconEl = document.getElementById('feedback-icon');
+            const titleEl = document.getElementById('feedback-title');
+            const msgEl = document.getElementById('feedback-message');
+
+            overlay.classList.remove('d-none');
+            overlay.classList.add('d-flex');
+            
+            if (option.correct) {
+                score++;
+                document.getElementById('score-display').innerText = score;
+                iconEl.innerHTML = `<div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-3xl mx-auto text-green-600 border-4 border-green-200">${option.icon}</div>`;
+                titleEl.innerText = "Decisão Correta!";
+                titleEl.className = "text-2xl font-bold mb-2 text-green-600";
+            } else {
+                iconEl.innerHTML = `<div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center text-3xl mx-auto text-red-600 border-4 border-red-200">${option.icon}</div>`;
+                titleEl.innerText = "Ops! Cuidado...";
+                titleEl.className = "text-2xl font-bold mb-2 text-red-600";
+            }
+
+            msgEl.innerText = option.feedback;
+        }
+
+        function nextEmail() {
+            currentEmailIndex++;
+            if (currentEmailIndex < emails.length) {
+                loadEmail();
+            } else {
+                finishGame();
+            }
+        }
+
+        function finishGame() {
+            // Esconde jogo e mostra resultado
+            document.getElementById('screen-game').classList.remove('d-flex');
+            document.getElementById('screen-game').classList.add('d-none');
+            
+            document.getElementById('screen-result').classList.remove('d-none');
+            document.getElementById('screen-result').classList.add('d-flex');
+            
+            document.getElementById('final-score').innerText = score;
+            
+            const msg = document.getElementById('final-msg');
+            const title = document.getElementById('result-title');
+
+            if (score <= 3) {
+                title.innerText = "Precisa Melhorar!";
+                title.className = "text-3xl font-black text-red-600 mb-1";
+                msg.innerHTML = "Você cometeu alguns erros críticos de etiqueta e segurança. <br>Recomendamos revisar as regras de <strong>comunicação formal</strong> e <strong>segurança digital</strong>.";
+            } else if (score <= 5) {
+                title.innerText = "Bom Trabalho!";
+                title.className = "text-3xl font-black text-blue-600 mb-1";
+                msg.innerHTML = "Você tem uma boa noção de escritório, mas escorregou em alguns detalhes. <br>Lembre-se: Na dúvida, opte sempre pela <strong>formalidade</strong> e <strong>segurança</strong>.";
+            } else {
+                title.innerText = "Excelente!";
+                title.className = "text-3xl font-black text-green-600 mb-1";
+                msg.innerHTML = "<strong>Profissional Exemplar!</strong> <br>Você domina a etiqueta de e-mail, sabe usar a nuvem e protege os dados da empresa. Está pronto para o mercado!";
+            }
+        }
+    </script>
+</body>
+</html>
