@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Logic Pixel: Visual Edition</title>
+    <!-- Fonte Pixelada -->
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Paleta Retrô */
+            --wood-dark: #3e2723;
+            --wood-mid: #795548;
+            --paper-bg: #fff8e1;
+            --paper-line: #ffe0b2;
+            
+            --theme-retail: #ffab91;
+            --theme-admin: #90caf9;
+            --theme-tour: #a5d6a7;
+        }
+
+        * { box-sizing: border-box; user-select: none; font-family: 'VT323', monospace; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            margin: 0; background-color: #263238; height: 100vh;
+            display: flex; justify-content: center; align-items: center; overflow: hidden;
+            background-image: linear-gradient(45deg, #37474f 25%, transparent 25%, transparent 75%, #37474f 75%), linear-gradient(45deg, #37474f 25%, transparent 25%, transparent 75%, #37474f 75%);
+            background-size: 20px 20px; background-position: 0 0, 10px 10px;
+        }
+
+        #game-frame {
+            width: 95%; max-width: 1100px; height: 95vh; max-height: 800px;
+            background: var(--paper-bg); border: 6px solid var(--wood-dark);
+            display: flex; flex-direction: column; position: relative;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        /* HEADER */
+        header {
+            background: var(--wood-mid); color: white; padding: 10px 20px;
+            border-bottom: 4px solid var(--wood-dark);
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 1.6rem; text-shadow: 2px 2px 0 var(--wood-dark);
+        }
+
+        .pixel-btn {
+            background: #ffcc80; border: 4px solid white; color: var(--wood-dark);
+            font-weight: bold; font-size: 1.2rem; padding: 5px 15px; cursor: pointer;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.3); transition: 0.1s;
+        }
+        .pixel-btn:active { transform: translate(4px, 4px); box-shadow: none; }
+        .pixel-btn.primary { background: #81c784; color: #1b5e20; }
+
+        /* AREA DO JOGO */
+        #main-stage { flex: 1; display: flex; overflow: hidden; }
+
+        /* CENÁRIO (ESQUERDA) */
+        #scene-view {
+            flex: 2; position: relative; background-color: var(--theme-retail);
+            display: flex; flex-direction: column; justify-content: flex-end;
+            padding-bottom: 20px; transition: background 0.5s; overflow: hidden;
+            border-right: 4px solid var(--wood-dark);
+        }
+
+        .bg-decoration { position: absolute; width:100%; height:100%; pointer-events:none; }
+        .bg-sprite { position: absolute; font-size: 4rem; opacity: 0.4; animation: float 6s ease-in-out infinite; filter: grayscale(0.3); }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+
+        /* MESAS */
+        .desks-wrapper {
+            display: flex; gap: 15px; padding: 0 20px; overflow-x: auto;
+            align-items: flex-end; justify-content: center; z-index: 10;
+        }
+
+        .pixel-desk {
+            min-width: 160px; background: #d7ccc8; border: 4px solid var(--wood-dark);
+            padding: 10px; display: flex; flex-direction: column; gap: 8px;
+            box-shadow: 8px 8px 0 rgba(0,0,0,0.3); position: relative; margin-bottom: 15px;
+        }
+        .pixel-desk::after { content: ''; position: absolute; bottom: -14px; left: 10px; width: 10px; height: 10px; background: var(--wood-dark); box-shadow: 120px 0 0 var(--wood-dark); }
+        
+        .desk-label { 
+            background: var(--wood-mid); color: white; text-align: center;
+            font-size: 1.2rem; border: 2px solid var(--wood-dark);
+        }
+
+        /* SLOTS VISUAIS */
+        .slot {
+            height: 80px; background: rgba(255,255,255,0.6);
+            border: 2px dashed var(--wood-mid);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; transition: 0.2s; padding: 4px; text-align: center;
+        }
+        .slot:hover { background: white; border-style: solid; }
+        .slot.filled { background: white; border: 2px solid var(--wood-dark); }
+        
+        /* Estilos para o conteúdo do slot */
+        .slot-img { width: 40px; height: 40px; object-fit: contain; image-rendering: pixelated; }
+        .slot-emoji { font-size: 2.5rem; line-height: 1; }
+        .slot-name { font-size: 1rem; color: var(--wood-dark); line-height: 1; margin-top: 2px; font-weight: bold; }
+        .slot-placeholder { font-size: 0.9rem; color: #666; text-transform: uppercase; }
+
+        /* DIARIO (DIREITA) */
+        #journal-panel {
+            width: 340px; background: var(--paper-bg);
+            background-image: linear-gradient(var(--paper-line) 1px, transparent 1px);
+            background-size: 100% 30px; border-left: 4px solid var(--wood-dark);
+            display: flex; flex-direction: column;
+        }
+        .journal-header { padding: 20px; text-align: center; font-size: 2rem; color: var(--wood-dark); text-decoration: underline wavy; }
+        .clues-container { flex: 1; overflow-y: auto; padding: 0 20px 20px; }
+        
+        .clue-row { 
+            font-size: 1.3rem; line-height: 30px; color: #3e2723; margin-bottom: 5px;
+            display: flex; gap: 10px; cursor: pointer; align-items: flex-start;
+        }
+        .check-box { width: 18px; height: 18px; border: 2px solid #3e2723; margin-top: 6px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: white; }
+        .check-box.checked::after { content: 'X'; font-weight: bold; }
+        .clue-text.dimmed { text-decoration: line-through; opacity: 0.5; }
+
+        /* MODAIS */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); z-index: 100;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: 0.2s;
+        }
+        .modal-overlay.visible { opacity: 1; pointer-events: auto; }
+
+        .rpg-box {
+            background: var(--paper-bg); border: 6px solid white; outline: 6px solid var(--wood-dark);
+            padding: 20px; width: 90%; max-width: 550px; position: relative; box-shadow: 15px 15px 0 rgba(0,0,0,0.6);
+        }
+
+        /* GRID DE INVENTÁRIO */
+        .inv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; margin-top: 15px; }
+        
+        .inv-item {
+            background: #efebe9; border: 2px solid var(--wood-mid); padding: 8px;
+            display: flex; flex-direction: column; align-items: center; gap: 5px;
+            cursor: pointer; transition: 0.1s;
+        }
+        .inv-item:hover { background: white; transform: scale(1.05); border-color: var(--wood-dark); }
+        .inv-item.used { opacity: 0.5; filter: grayscale(1); }
+        
+        .inv-item img { width: 50px; height: 50px; image-rendering: pixelated; border-radius: 4px; }
+        .inv-item .inv-emoji { font-size: 3rem; }
+        .inv-item span { font-size: 1.1rem; font-weight: bold; color: var(--wood-dark); }
+
+        /* UI DO MENU */
+        .level-btn {
+            border: 2px solid var(--wood-mid); background: white; padding: 10px; margin-bottom: 10px;
+            cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 1.3rem;
+        }
+        .level-btn:hover { background: #ffe0b2; border-color: var(--wood-dark); }
+
+        /* RESPONSIVO */
+        @media (max-width: 768px) {
+            #main-stage { flex-direction: column; }
+            #scene-view { flex: 1; border-right: none; border-bottom: 4px solid var(--wood-dark); }
+            #journal-panel { flex: 1.5; width: 100%; border-left: none; }
+            .desks-wrapper { justify-content: flex-start; padding-bottom: 5px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-frame">
+        <header>
+            <div id="lvl-title">MENU</div>
+            <button class="pixel-btn" onclick="openMenu()">MAPA 🗺️</button>
+        </header>
+
+        <div id="main-stage">
+            <!-- CENÁRIO -->
+            <div id="scene-view">
+                <div class="bg-decoration" id="bg-decoration"></div>
+                <div class="desks-wrapper" id="board-container"></div>
+            </div>
+
+            <!-- CADERNO -->
+            <div id="journal-panel">
+                <div class="journal-header">Anotações</div>
+                <div class="clues-container" id="clues-list"></div>
+                <div style="padding: 10px;">
+                    <button class="pixel-btn primary" style="width:100%" onclick="checkSolution()">VALIDAR ✓</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL MENU -->
+    <div id="menu-modal" class="modal-overlay visible">
+        <div class="rpg-box">
+            <h2 style="text-align:center; border-bottom:2px solid var(--wood-mid); margin-top:0;">ESCOLHA A MISSÃO</h2>
+            <div id="levels-list"></div>
+        </div>
+    </div>
+
+    <!-- MODAL INVENTÁRIO -->
+    <div id="inv-modal" class="modal-overlay">
+        <div class="rpg-box">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3 id="inv-title" style="margin:0; font-size:1.8rem;">SELECIONAR ITEM</h3>
+                <button onclick="closeInv()" style="background:none; border:none; font-size:2rem; cursor:pointer;">×</button>
+            </div>
+            <div class="inv-grid" id="inv-grid"></div>
+            <button class="pixel-btn" style="width:100%; margin-top:20px; background:#ef9a9a;" onclick="selectOption(null)">LIMPAR SLOT 🗑️</button>
+        </div>
+    </div>
+
+    <!-- MODAL MENSAGEM -->
+    <div id="msg-modal" class="modal-overlay">
+        <div class="rpg-box" style="text-align:center;">
+            <div id="msg-icon" style="font-size:5rem;"></div>
+            <h2 id="msg-title" style="font-size:2.5rem; margin:10px 0;">TITULO</h2>
+            <p id="msg-text" style="font-size:1.5rem;">Texto</p>
+            <button id="msg-btn" class="pixel-btn primary" style="font-size:1.5rem; padding:10px 30px;">CONTINUAR</button>
+        </div>
+    </div>
+
+    <script>
+        // Função auxiliar para avatar
+        const getAvatar = (seed) => `https://api.dicebear.com/9.x/pixel-art/svg?seed=${seed}&scale=80&backgroundColor=transparent`;
+
+        // --- DADOS DO JOGO (COM IMAGENS) ---
+        const LEVELS = [
+            {
+                id: 0,
+                tag: "VAREJO",
+                title: "O Mercadinho",
+                bgColor: "#ffab91",
+                sprites: ["🛒", "🧾", "📦", "🍎"],
+                desks: 3,
+                cats: ["name", "role", "item"],
+                labels: { name: "Pessoa", role: "Função", item: "Objeto" },
+                options: {
+                    // Categoria: PESSOAS (Com Avatar)
+                    name: [
+                        { val: "Cacá", type: 'img', src: getAvatar("Caca") },
+                        { val: "Luiz", type: 'img', src: getAvatar("Luiz") },
+                        { val: "João", type: 'img', src: getAvatar("Joao") }
+                    ],
+                    // Categoria: FUNÇÃO (Texto/Ícone simples)
+                    role: [
+                        { val: "Caixa", type: 'icon', src: "💵" },
+                        { val: "Estoque", type: 'icon', src: "📦" },
+                        { val: "Vendas", type: 'icon', src: "🤝" }
+                    ],
+                    // Categoria: ITEM (Objetos Visuais)
+                    item: [
+                        { val: "Maquininha", type: 'icon', src: "💳" },
+                        { val: "Leitor", type: 'icon', src: "📟" },
+                        { val: "Sacola", type: 'icon', src: "🛍️" }
+                    ]
+                },
+                clues: [
+                    "<strong>João</strong> tá exausto na <strong>Mesa 1</strong> (Esquerda).",
+                    "Quem é do <strong>Estoque</strong> precisa do <strong>Leitor</strong> (📟).",
+                    "O <strong>Caixa</strong> (💵) fica isolado na mesa do <strong>Centro</strong>.",
+                    "<strong>Luiz</strong> não aguenta mais ficar no <strong>Caixa</strong>.",
+                    "<strong>Cacá</strong> tá correndo com a <strong>Maquininha</strong> (💳).",
+                    "A pessoa de <strong>Vendas</strong> senta na <strong>Mesa 3</strong>."
+                ],
+                check: (s) => {
+                    if (s[0].name?.val !== 'João') return "João deve estar na Mesa 1.";
+                    if (s[1].role?.val !== 'Caixa') return "A Mesa do Centro é o Caixa.";
+                    if (s[1].name?.val !== 'Cacá') return "Cacá está no Caixa.";
+                    if (s[1].item?.val !== 'Maquininha') return "Caixa precisa da Maquininha.";
+                    if (s[0].role?.val !== 'Estoque') return "João é do Estoque.";
+                    if (s[0].item?.val !== 'Leitor') return "Estoque usa Leitor.";
+                    if (s[2].name?.val !== 'Luiz') return "Luiz está na Mesa 3.";
+                    return true;
+                }
+            },
+            {
+                id: 1,
+                tag: "ESCRITÓRIO",
+                title: "O Corporativo",
+                bgColor: "#90caf9",
+                sprites: ["📠", "📎", "☕", "📅"],
+                desks: 4,
+                cats: ["name", "dept", "obj"],
+                labels: { name: "Pessoa", dept: "Setor", obj: "Mesa Tem" },
+                options: {
+                    name: [
+                        { val: "Ana", type: 'img', src: getAvatar("Ana") },
+                        { val: "Bia", type: 'img', src: getAvatar("Bia") },
+                        { val: "Carlos", type: 'img', src: getAvatar("Carlos") },
+                        { val: "Davi", type: 'img', src: getAvatar("Davi") }
+                    ],
+                    dept: [
+                        { val: "RH", type: 'icon', src: "👥" },
+                        { val: "TI", type: 'icon', src: "💻" },
+                        { val: "Finanças", type: 'icon', src: "💰" },
+                        { val: "Mkt", type: 'icon', src: "📢" }
+                    ],
+                    obj: [
+                        { val: "Café", type: 'icon', src: "☕" },
+                        { val: "Excel", type: 'icon', src: "📊" },
+                        { val: "Fone", type: 'icon', src: "🎧" },
+                        { val: "Carimbo", type: 'icon', src: "💮" }
+                    ]
+                },
+                clues: [
+                    "O <strong>Chefe (Finanças)</strong> exige a <strong>Mesa 4</strong>.",
+                    "O pessoal do <strong>TI</strong> é movido a <strong>Café</strong> (☕).",
+                    "O <strong>Marketing</strong> usa <strong>Fone</strong> (🎧) para focar.",
+                    "A mesa do <strong>RH</strong> é a primeira (Mesa 1).",
+                    "<strong>Carlos</strong> é o vizinho fofoqueiro do <strong>RH</strong>.",
+                    "<strong>Bia</strong> é a lenda do <strong>TI</strong>.",
+                    "<strong>Davi</strong> sonha em <strong>Excel</strong> (📊).",
+                    "<strong>Ana</strong> não larga o <strong>Carimbo</strong> (💮)."
+                ],
+                check: (s) => {
+                    if(s[0].dept?.val !== 'RH') return "RH fica na Mesa 1.";
+                    if(s[3].dept?.val !== 'Finanças') return "Finanças fica na Mesa 4.";
+                    if(s[1].name?.val !== 'Carlos') return "Carlos está na Mesa 2.";
+                    if(s[2].name?.val !== 'Bia') return "Bia é do TI (Mesa 3).";
+                    if(s[2].obj?.val !== 'Café') return "TI precisa de Café.";
+                    if(s[3].obj?.val !== 'Excel') return "Davi usa Excel.";
+                    if(s[0].name?.val !== 'Ana') return "Ana é do RH.";
+                    return true;
+                }
+            },
+            {
+                id: 2,
+                tag: "TURISMO",
+                title: "Resort Tropical",
+                bgColor: "#a5d6a7",
+                sprites: ["🍹", "🌴", "🧳", "📷"],
+                desks: 5,
+                cats: ["role", "lang", "item"],
+                labels: { role: "Função", lang: "Idioma", item: "Item" },
+                options: {
+                    role: [
+                        { val: "Recepção", type: 'img', src: getAvatar("Recep") },
+                        { val: "Camareira", type: 'img', src: getAvatar("Camareira") },
+                        { val: "Guia", type: 'img', src: getAvatar("Guia") },
+                        { val: "Gerente", type: 'img', src: getAvatar("Gerente") },
+                        { val: "Barman", type: 'img', src: getAvatar("Barman") }
+                    ],
+                    lang: [
+                        { val: "PT-BR", type: 'icon', src: "🇧🇷" },
+                        { val: "Inglês", type: 'icon', src: "🇺🇸" },
+                        { val: "Espanhol", type: 'icon', src: "🇪🇸" },
+                        { val: "Francês", type: 'icon', src: "🇫🇷" },
+                        { val: "Alemão", type: 'icon', src: "🇩🇪" }
+                    ],
+                    item: [
+                        { val: "Chave", type: 'icon', src: "🔑" },
+                        { val: "Toalha", type: 'icon', src: "🧴" },
+                        { val: "Mapa", type: 'icon', src: "🗺️" },
+                        { val: "Rádio", type: 'icon', src: "📻" },
+                        { val: "Drink", type: 'icon', src: "🍹" }
+                    ]
+                },
+                clues: [
+                    "O <strong>Barman</strong> prepara <strong>Drinks</strong> (🍹) na <strong>Mesa 3</strong>.",
+                    "A <strong>Recepção</strong> (Mesa 1) usa <strong>Rádio</strong> (📻).",
+                    "A última mesa (5) só fala <strong>Francês</strong> (🇫🇷).",
+                    "A <strong>Camareira</strong> está ao lado da Recepção.",
+                    "Quem tem <strong>Toalha</strong> (🧴) fala <strong>Espanhol</strong>.",
+                    "O <strong>Guia</strong> não larga o <strong>Mapa</strong> (🗺️).",
+                    "Quem fala <strong>Inglês</strong> é vizinho do Barman (Mesa 2 ou 4).",
+                    "A <strong>Chave Mestra</strong> (🔑) fica na Mesa 5.",
+                    "O <strong>Gerente</strong> fala <strong>Francês</strong>."
+                ],
+                check: (s) => {
+                    if(s[0].role?.val !== 'Recepção') return "Recepção na Mesa 1.";
+                    if(s[2].role?.val !== 'Barman') return "Barman na Mesa 3.";
+                    if(s[4].lang?.val !== 'Francês') return "Francês na Mesa 5.";
+                    if(s[1].role?.val !== 'Camareira') return "Camareira na Mesa 2.";
+                    if(s[1].lang?.val !== 'Espanhol') return "Espanhol tem Toalha.";
+                    if(s[3].item?.val !== 'Mapa') return "Guia usa Mapa.";
+                    if(s[4].role?.val !== 'Gerente') return "Gerente fala Francês.";
+                    return true;
+                }
+            }
+        ];
+
+        // --- ENGINE ---
+        let state = [];
+        let currLevel = 0;
+        let activeSel = { desk: null, cat: null };
+
+        function init() {
+            const list = document.getElementById('levels-list');
+            list.innerHTML = '';
+            LEVELS.forEach((lvl, idx) => {
+                const btn = document.createElement('div');
+                btn.className = 'level-btn';
+                btn.innerHTML = `<span><strong>${lvl.tag}</strong></span><span>${lvl.title} ▶</span>`;
+                btn.onclick = () => loadLevel(idx);
+                list.appendChild(btn);
+            });
+        }
+
+        function openMenu() { document.getElementById('menu-modal').classList.add('visible'); }
+
+        function loadLevel(idx) {
+            currLevel = idx;
+            const lvl = LEVELS[idx];
+            
+            // State agora armazena Objetos inteiros {val, src, type}
+            state = Array(lvl.desks).fill(null).map(() => ({}));
+            
+            // Visual Setup
+            document.getElementById('menu-modal').classList.remove('visible');
+            document.getElementById('lvl-title').innerText = lvl.title;
+            document.getElementById('scene-view').style.backgroundColor = lvl.bgColor;
+            
+            const bg = document.getElementById('bg-decoration');
+            bg.innerHTML = '';
+            for(let i=0; i<8; i++) {
+                const sp = document.createElement('div');
+                sp.className = 'bg-sprite';
+                sp.innerText = lvl.sprites[Math.floor(Math.random()*lvl.sprites.length)];
+                sp.style.left = Math.random()*90+'%';
+                sp.style.top = Math.random()*80+'%';
+                sp.style.animationDelay = Math.random()*5+'s';
+                bg.appendChild(sp);
+            }
+
+            renderBoard();
+            renderClues();
+        }
+
+        function renderBoard() {
+            const container = document.getElementById('board-container');
+            container.innerHTML = '';
+            const lvl = LEVELS[currLevel];
+
+            for(let i=0; i<lvl.desks; i++) {
+                const desk = document.createElement('div');
+                desk.className = 'pixel-desk';
+                desk.innerHTML = `<div class="desk-label">MESA ${i+1}</div>`;
+
+                lvl.cats.forEach(cat => {
+                    const slot = document.createElement('div');
+                    slot.className = 'slot';
+                    slot.id = `slot-${i}-${cat}`;
+                    slot.onclick = () => openInv(i, cat);
+                    
+                    const label = lvl.labels[cat];
+                    slot.innerHTML = `<div class="slot-placeholder">${label}</div>`;
+                    desk.appendChild(slot);
+                });
+                container.appendChild(desk);
+            }
+        }
+
+        function renderClues() {
+            const list = document.getElementById('clues-list');
+            list.innerHTML = '';
+            LEVELS[currLevel].clues.forEach(txt => {
+                const row = document.createElement('div');
+                row.className = 'clue-row';
+                row.onclick = function() {
+                    this.querySelector('.check-box').classList.toggle('checked');
+                    this.querySelector('.clue-text').classList.toggle('dimmed');
+                };
+                row.innerHTML = `
+                    <div class="check-box"></div>
+                    <div class="clue-text">${txt}</div>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        function openInv(desk, cat) {
+            activeSel = { desk, cat };
+            const lvl = LEVELS[currLevel];
+            
+            document.getElementById('inv-title').innerText = lvl.labels[cat];
+            const grid = document.getElementById('inv-grid');
+            grid.innerHTML = '';
+
+            lvl.options[cat].forEach(opt => {
+                const item = document.createElement('div');
+                item.className = 'inv-item';
+                
+                // Marca se usado
+                const isUsed = state.some((s, idx) => idx !== desk && s[cat]?.val === opt.val);
+                if(isUsed) item.classList.add('used');
+
+                // Render Item no Inventário
+                let content = '';
+                if(opt.type === 'img') content = `<img src="${opt.src}">`;
+                else content = `<span class="inv-emoji">${opt.src}</span>`;
+                
+                item.innerHTML = `${content}<span>${opt.val}</span>`;
+                
+                item.onclick = () => selectOption(opt);
+                grid.appendChild(item);
+            });
+
+            document.getElementById('inv-modal').classList.add('visible');
+        }
+
+        function selectOption(opt) {
+            const { desk, cat } = activeSel;
+            state[desk][cat] = opt; // Guarda o objeto inteiro ou null
+
+            const slot = document.getElementById(`slot-${desk}-${cat}`);
+            
+            if(opt) {
+                slot.classList.add('filled');
+                let content = '';
+                if(opt.type === 'img') content = `<img class="slot-img" src="${opt.src}">`;
+                else content = `<span class="slot-emoji">${opt.src}</span>`;
+                
+                slot.innerHTML = `${content}<div class="slot-name">${opt.val}</div>`;
+            } else {
+                slot.classList.remove('filled');
+                slot.innerHTML = `<div class="slot-placeholder">${LEVELS[currLevel].labels[cat]}</div>`;
+            }
+            closeInv();
+        }
+
+        function closeInv() { document.getElementById('inv-modal').classList.remove('visible'); }
+
+        function checkSolution() {
+            const lvl = LEVELS[currLevel];
+            let full = true;
+            for(let i=0; i<lvl.desks; i++) {
+                lvl.cats.forEach(c => { if(!state[i][c]) full = false; });
+            }
+
+            if(!full) {
+                showMsg("INCOMPLETO", "Ainda faltam itens para organizar!", false);
+                return;
+            }
+
+            const res = lvl.check(state);
+            if(res === true) {
+                showMsg("SUCESSO!", "Você organizou tudo perfeitamente!", true);
+            } else {
+                showMsg("ALGO ERRADO", res, false);
+            }
+        }
+
+        function showMsg(title, text, success) {
+            const modal = document.getElementById('msg-modal');
+            document.getElementById('msg-title').innerText = title;
+            document.getElementById('msg-text').innerText = text;
+            document.getElementById('msg-icon').innerText = success ? "🏆" : "🤔";
+            
+            const btn = document.getElementById('msg-btn');
+            btn.onclick = () => {
+                modal.classList.remove('visible');
+                if(success && currLevel < LEVELS.length - 1) loadLevel(currLevel + 1);
+            };
+            modal.classList.add('visible');
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
