@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filtro Profissional 2.0 📸</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;800&family=Oswald:wght@500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        h1, h2, .brand-font { font-family: 'Oswald', sans-serif; }
+        
+        .hidden { display: none !important; }
+        .flex { display: flex !important; }
+
+        /* Animações de Card */
+        @keyframes slideInRight { from { transform: translateX(100%) scale(0.8); opacity: 0; } to { transform: translateX(0) scale(1); opacity: 1; } }
+        @keyframes swipeLeft { to { transform: translateX(-150%) rotate(-20deg); opacity: 0; } }
+        @keyframes swipeRight { to { transform: translateX(150%) rotate(20deg); opacity: 0; } }
+        
+        .card-enter { animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .card-left { animation: swipeLeft 0.5s ease-in forwards; }
+        .card-right { animation: swipeRight 0.5s ease-in forwards; }
+
+        /* Gradientes e Detalhes */
+        .insta-gradient { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
+        .glass-panel { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-800 to-slate-900">
+    
+    <!-- Fundo abstrato sutil -->
+    <div class="fixed inset-0 opacity-20 pointer-events-none" style="background-image: radial-gradient(#ffffff 1px, transparent 1px); background-size: 20px 20px;"></div>
+
+    <!-- TELA 1: INTRODUÇÃO -->
+    <div id="screen-intro" class="relative z-10 w-full max-w-sm bg-white p-8 rounded-3xl shadow-2xl text-center border-4 border-white/10">
+        <div class="w-24 h-24 mx-auto bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600 rounded-full p-1 mb-6 animate-pulse">
+            <div class="w-full h-full bg-white rounded-full flex items-center justify-center text-4xl">
+                📸
+            </div>
+        </div>
+        <h1 class="text-3xl font-black mb-2 text-gray-800 brand-font uppercase">Filtro de Imagem</h1>
+        <p class="text-gray-500 mb-8 text-sm leading-relaxed">
+            Sua imagem profissional vale ouro! 🌟<br>
+            Temos <strong>12 situações</strong>. Você deve decidir o que vai para o <strong>FEED (Público)</strong> e o que deve ser <strong>ARQUIVADO (Privado)</strong>.<br>
+            Bora ver se você passa nesse teste?
+        </p>
+        <button onclick="startGame()" class="w-full py-4 bg-gray-900 hover:bg-black text-white rounded-xl font-bold shadow-lg transform transition hover:scale-105 active:scale-95 text-lg">
+            COMEÇAR FILTRAGEM
+        </button>
+    </div>
+
+    <!-- TELA 2: O JOGO (SWIPE) -->
+    <div id="screen-game" class="hidden relative z-10 w-full max-w-sm flex-col h-[650px]">
+        
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-4 px-2 text-white drop-shadow-md">
+            <div class="text-sm font-bold bg-white/10 px-3 py-1 rounded-full backdrop-blur-sm">CARD <span id="current-count">1</span>/12</div>
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-bold uppercase tracking-wider opacity-80">Modo Edição</span>
+                <div class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+            </div>
+        </div>
+
+        <!-- Área dos Cards -->
+        <div class="relative w-full flex-1 flex items-center justify-center perspective-1000">
+            
+            <!-- Card Principal -->
+            <div id="card-container" class="w-full h-[400px] bg-white rounded-3xl shadow-2xl border border-gray-100 flex flex-col items-center justify-center p-6 text-center relative z-20 card-enter">
+                
+                <!-- Tag do Tipo (Visual Aid) -->
+                <div class="absolute top-4 right-4 text-xs font-bold text-gray-300 uppercase tracking-widest">Post #<span id="card-id">00</span></div>
+
+                <div id="card-icon" class="text-7xl mb-6 filter drop-shadow-lg transform transition hover:scale-110 duration-300">🤔</div>
+                <h2 id="card-title" class="text-2xl font-black text-gray-800 mb-3 brand-font leading-tight">Carregando...</h2>
+                <p id="card-desc" class="text-gray-500 text-sm px-4">...</p>
+                
+                <!-- Selos de Decisão (Aparecem na animação) -->
+                <div id="stamp-nope" class="hidden absolute top-10 right-8 border-4 border-red-500 text-red-500 font-black text-2xl px-4 py-2 transform rotate-12 rounded-lg opacity-80 shadow-xl bg-white">ARQUIVAR 🚫</div>
+                <div id="stamp-like" class="hidden absolute top-10 left-8 border-4 border-green-500 text-green-500 font-black text-2xl px-4 py-2 transform -rotate-12 rounded-lg opacity-80 shadow-xl bg-white">POSTAR ✅</div>
+            </div>
+
+            <!-- Card Fundo (Decoração) -->
+            <div class="absolute w-[92%] h-[400px] bg-white/20 rounded-3xl shadow-sm -z-10 transform scale-95 translate-y-4"></div>
+            <div class="absolute w-[85%] h-[400px] bg-white/10 rounded-3xl shadow-sm -z-20 transform scale-90 translate-y-8"></div>
+
+        </div>
+
+        <!-- Botões de Ação -->
+        <div class="flex justify-center gap-8 mt-6">
+            <div class="flex flex-col items-center gap-2 group cursor-pointer" onclick="handleDecision('archive')">
+                <button class="w-16 h-16 rounded-full bg-white border-2 border-red-100 shadow-xl text-red-500 text-2xl flex items-center justify-center hover:bg-red-500 hover:text-white hover:border-red-500 transition transform group-hover:scale-110">
+                    ✕
+                </button>
+                <span class="text-xs font-bold text-white bg-black/50 px-2 py-0.5 rounded backdrop-blur-sm">PRIVADO</span>
+            </div>
+
+            <div class="flex flex-col items-center gap-2 group cursor-pointer" onclick="handleDecision('post')">
+                <button class="w-16 h-16 rounded-full bg-white border-2 border-green-100 shadow-xl text-green-500 text-3xl flex items-center justify-center hover:bg-green-500 hover:text-white hover:border-green-500 transition transform group-hover:scale-110">
+                    ♥
+                </button>
+                <span class="text-xs font-bold text-white bg-black/50 px-2 py-0.5 rounded backdrop-blur-sm">PÚBLICO</span>
+            </div>
+        </div>
+        
+        <p class="text-center text-xs text-white/50 mt-6 font-light">Isso ajuda ou atrapalha sua imagem?</p>
+    </div>
+
+    <!-- TELA 3: RESULTADO -->
+    <div id="screen-result" class="hidden relative z-10 w-full max-w-sm bg-white flex-col h-auto min-h-[500px] rounded-3xl shadow-2xl overflow-hidden animate-slide">
+        
+        <!-- Capa de Perfil (Cor dinâmica) -->
+        <div id="result-header" class="h-36 bg-gray-800 relative transition-colors duration-500">
+            <div class="absolute -bottom-12 left-1/2 transform -translate-x-1/2 w-28 h-28 bg-white p-1.5 rounded-full shadow-lg">
+                <div id="result-emoji" class="w-full h-full bg-gray-100 rounded-full flex items-center justify-center text-5xl">😎</div>
+            </div>
+        </div>
+
+        <!-- Infos do Perfil -->
+        <div class="pt-14 px-6 pb-6 text-center">
+            <h2 id="result-title" class="text-3xl font-black text-gray-900 brand-font uppercase mb-1">...</h2>
+            <p class="text-sm text-gray-500 font-medium mb-6">@jovemaprendiz</p>
+            
+            <!-- Stats -->
+            <div class="flex justify-center gap-4 mb-6 text-center bg-gray-50 p-4 rounded-xl border border-gray-100">
+                <div class="flex-1 border-r border-gray-200">
+                    <span class="block font-black text-xl text-gray-900" id="score-display">0</span>
+                    <span class="text-[10px] uppercase text-gray-400 font-bold">Acertos</span>
+                </div>
+                <div class="flex-1">
+                    <span class="block font-black text-xl text-gray-900">12</span>
+                    <span class="text-[10px] uppercase text-gray-400 font-bold">Total</span>
+                </div>
+            </div>
+
+            <!-- Bio Gerada -->
+            <div id="feedback-box" class="mb-6 text-left bg-gray-50 p-4 rounded-xl border border-gray-200">
+                <h3 class="font-bold text-xs uppercase text-gray-400 mb-2">Análise do Feed:</h3>
+                <p id="bio-text" class="text-sm text-gray-700 leading-relaxed font-medium">
+                    <!-- JS insere aqui -->
+                </p>
+            </div>
+
+            <button onclick="location.reload()" class="w-full py-3 bg-gray-900 hover:bg-black text-white rounded-lg font-bold text-sm transition shadow-lg">
+                🔄 Tentar Novamente
+            </button>
+        </div>
+        
+        <!-- Faixa inferior decorativa -->
+        <div class="h-2 w-full bg-gradient-to-r from-yellow-400 via-red-500 to-purple-600"></div>
+    </div>
+
+    <script>
+        // --- DADOS (12 Situações: 6 Positivas, 6 Negativas) ---
+        // correctAction: 'post' (Verde) ou 'archive' (Vermelho)
+        const scenarios = [
+            // POSITIVAS (Postar)
+            { id: 1, title: "Certificado do Curso", desc: "Foto segurando o diploma ou print da conclusão.", icon: "📜", correctAction: "post" },
+            { id: 2, title: "Dia de Voluntariado", desc: "Ajudando na comunidade ou em uma ONG no fim de semana.", icon: "🤝", correctAction: "post" },
+            { id: 3, title: "Estação de Trabalho", desc: "Foto da mesa organizada (sem dados confidenciais na tela).", icon: "💻", correctAction: "post" },
+            { id: 4, title: "Evento da Empresa", desc: "Foto com a equipe no café da manhã ou confraternização.", icon: "☕", correctAction: "post" },
+            { id: 5, title: "Livro da Área", desc: "Foto lendo um livro ou artigo sobre sua profissão.", icon: "📚", correctAction: "post" },
+            { id: 6, title: "Palestra / Workshop", desc: "Check-in em um evento de aprendizado.", icon: "🎤", correctAction: "post" },
+
+            // NEGATIVAS (Arquivar)
+            { id: 7, title: "Sextou Bolado", desc: "Vídeo visivelmente embriagado(a) na balada.", icon: "🍻", correctAction: "archive" },
+            { id: 8, title: "Indireta pro Chefe", desc: "Post com frase motivacional atacando a liderança ou colegas.", icon: "🤬", correctAction: "archive" },
+            { id: 9, title: "Fake News", desc: "Compartilhar notícia polêmica e falsa sem checar a fonte.", icon: "📢", correctAction: "archive" },
+            { id: 10, title: "Foto de Roupa Íntima", desc: "Foto muito reveladora/íntima (contexto: feed profissional).", icon: "👙", correctAction: "archive" },
+            { id: 11, title: "Vazamento de Dados", desc: "Selfie onde aparece a tela do PC com planilhas de clientes.", icon: "🕵️", correctAction: "archive" },
+            { id: 12, title: "Discurso de Ódio", desc: "Comentário agressivo sobre política ou futebol.", icon: "🚫", correctAction: "archive" }
+        ];
+
+        let currentIndex = 0;
+        let score = 0; // Conta decisões corretas
+        let isAnimating = false;
+
+        // Embaralhar as cartas para não ficar sempre na mesma ordem
+        scenarios.sort(() => Math.random() - 0.5);
+
+        // --- INICIAR ---
+        function startGame() {
+            document.getElementById('screen-intro').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+            document.getElementById('screen-game').classList.add('flex');
+            loadCard();
+        }
+
+        // --- CARREGAR CARD ---
+        function loadCard() {
+            const card = scenarios[currentIndex];
+            const cardEl = document.getElementById('card-container');
+            
+            // Reset animações
+            cardEl.className = "w-full h-[400px] bg-white rounded-3xl shadow-2xl border border-gray-100 flex flex-col items-center justify-center p-6 text-center relative z-20 card-enter";
+            document.getElementById('stamp-nope').classList.add('hidden');
+            document.getElementById('stamp-like').classList.add('hidden');
+
+            // Conteúdo
+            document.getElementById('card-id').innerText = (currentIndex + 1).toString().padStart(2, '0');
+            document.getElementById('card-icon').innerText = card.icon;
+            document.getElementById('card-title').innerText = card.title;
+            document.getElementById('card-desc').innerText = card.desc;
+            document.getElementById('current-count').innerText = currentIndex + 1;
+        }
+
+        // --- DECISÃO ---
+        function handleDecision(decision) {
+            if (isAnimating) return;
+            isAnimating = true;
+
+            const cardEl = document.getElementById('card-container');
+            const currentScenario = scenarios[currentIndex];
+
+            // Verifica se acertou
+            if (decision === currentScenario.correctAction) {
+                score++;
+            }
+
+            // Feedback Visual
+            if (decision === 'post') {
+                cardEl.classList.add('card-right');
+                document.getElementById('stamp-like').classList.remove('hidden');
+            } else {
+                cardEl.classList.add('card-left');
+                document.getElementById('stamp-nope').classList.remove('hidden');
+            }
+
+            // Próximo card
+            setTimeout(() => {
+                currentIndex++;
+                isAnimating = false;
+
+                if (currentIndex < scenarios.length) {
+                    loadCard();
+                } else {
+                    finishGame();
+                }
+            }, 500);
+        }
+
+        // --- FINALIZAR ---
+        function finishGame() {
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('flex');
+            document.getElementById('screen-result').classList.remove('hidden');
+            document.getElementById('screen-result').classList.add('flex');
+
+            // Preencher Score
+            document.getElementById('score-display').innerText = score;
+
+            // Elementos de Feedback
+            const header = document.getElementById('result-header');
+            const emoji = document.getElementById('result-emoji');
+            const title = document.getElementById('result-title');
+            const bioText = document.getElementById('bio-text');
+            const box = document.getElementById('feedback-box');
+
+            // --- LÓGICA DE RESULTADOS AJUSTADA ---
+            // 0 a 4: Ruim
+            // 5 a 8: Bom
+            // 9 a 12: Excelente
+
+            if (score <= 4) {
+                // RUIM
+                header.className = "h-36 bg-red-600 relative transition-colors duration-500";
+                emoji.innerText = "😵";
+                title.innerText = "Queimou o Filme!";
+                title.className = "text-3xl font-black text-red-600 brand-font uppercase mb-1";
+                box.className = "mb-6 text-left bg-red-50 p-4 rounded-xl border border-red-200";
+                // MENSAGEM ALTERADA AQUI
+                bioText.innerHTML = `Você teve poucos acertos! <br><br><strong>Cuidado:</strong> Misturar bebedeira, polêmicas e vazamento de dados no perfil profissional é perigoso. A empresa olha isso e você pode se prejudicar.`;
+            } 
+            else if (score <= 8) {
+                // BOM
+                header.className = "h-36 bg-blue-600 relative transition-colors duration-500";
+                emoji.innerText = "👍";
+                title.innerText = "Mandou Bem!";
+                title.className = "text-3xl font-black text-blue-600 brand-font uppercase mb-1";
+                box.className = "mb-6 text-left bg-blue-50 p-4 rounded-xl border border-blue-200";
+                // MENSAGEM ALTERADA AQUI
+                bioText.innerHTML = `Você tem noção do que é profissional, mas deu alguns deslizes importantes. <br><br><strong>Dica:</strong> Antes de postar, pense: "Eu mostraria isso no espaço de trabalho?". Se a resposta for não, não poste!`;
+            } 
+            else {
+                // EXCELENTE (9 a 12)
+                header.className = "h-36 bg-green-500 relative transition-colors duration-500";
+                emoji.innerText = "🌟";
+                title.innerText = "Perfil de Milhões!";
+                title.className = "text-3xl font-black text-green-600 brand-font uppercase mb-1";
+                box.className = "mb-6 text-left bg-green-50 p-4 rounded-xl border border-green-200";
+                bioText.innerHTML = `<strong>Parabéns!</strong> Você sabe exatamente como construir uma marca pessoal forte. <br><br>Seu feed mostra conquistas, aprendizado e postura. Você está prontíssimo para ser notado no mercado!`;
+            }
+        }
+    </script>
+</body>
+</html>
