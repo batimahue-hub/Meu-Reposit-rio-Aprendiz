@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Laboratório de Segurança 🛡️</title>
+    
+    <!-- Fontes Modernas -->
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;700;900&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    
+    <!-- Ícones e Efeitos -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        :root {
+            /* Paleta de Cores Vibrante */
+            --bg-deep: #0f172a;
+            --bg-surface: #1e293b;
+            --primary: #6366f1; /* Indigo Neon */
+            --primary-glow: rgba(99, 102, 241, 0.4);
+            --success: #10b981; /* Verde Esmeralda */
+            --danger: #ef4444; /* Vermelho Vivo */
+            --warning: #f59e0b; /* Âmbar */
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            /* Fontes */
+            --font-display: 'Exo 2', sans-serif;
+            --font-body: 'Inter', sans-serif;
+        }
+
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--bg-deep);
+            background-image: radial-gradient(circle at 50% 0%, #312e81 0%, var(--bg-deep) 70%);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* --- CABEÇALHO --- */
+        header {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(12px);
+            padding: 15px 20px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .brand {
+            font-family: var(--font-display);
+            font-weight: 900;
+            font-size: 1.1rem;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        
+        .brand i { color: var(--primary); filter: drop-shadow(0 0 5px var(--primary)); }
+
+        .stats-bar {
+            display: flex;
+            gap: 20px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .stat { display: flex; align-items: center; gap: 6px; }
+        .stat.life { color: var(--danger); }
+        .stat.xp { color: var(--success); }
+
+        /* --- CARTÕES E CENAS --- */
+        .card {
+            background: var(--bg-surface);
+            border-radius: 24px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+            min-height: 500px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .scene-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .tag {
+            background: rgba(99, 102, 241, 0.15);
+            color: #818cf8;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .question {
+            font-size: 1.2rem;
+            font-weight: 600;
+            line-height: 1.5;
+            margin-bottom: 25px;
+            color: #f1f5f9;
+        }
+
+        /* --- ELEMENTOS INTERATIVOS --- */
+        
+        /* 1. Grid de Inventário */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        
+        .item-box {
+            background: rgba(255,255,255,0.03);
+            border: 2px solid transparent;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        
+        .item-box:active { transform: scale(0.96); }
+        .item-box.selected {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--primary);
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+        
+        .item-icon { font-size: 2.5rem; display: block; margin-bottom: 8px; }
+        .item-label { font-weight: 600; font-size: 0.9rem; }
+
+        /* 2. Botões de Escolha (Lista) */
+        .choice-btn {
+            width: 100%;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 18px;
+            border-radius: 12px;
+            color: var(--text-main);
+            font-family: var(--font-body);
+            font-size: 1rem;
+            text-align: left;
+            cursor: pointer;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.2s;
+        }
+
+        .choice-btn:hover { background: rgba(255,255,255,0.08); }
+        .choice-btn.selected {
+            background: var(--primary);
+            border-color: var(--primary);
+            box-shadow: 0 4px 15px var(--primary-glow);
+            font-weight: 700;
+        }
+        .check-circle {
+            width: 20px; height: 20px; border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.5);
+        }
+        .choice-btn.selected .check-circle { background: #fff; border-color: #fff; }
+
+        /* 3. Mapa de Riscos (Cores) */
+        .color-row {
+            display: flex; justify-content: space-between; gap: 10px;
+            background: rgba(0,0,0,0.3); padding: 15px; border-radius: 50px;
+        }
+        .paint {
+            width: 50px; height: 50px; border-radius: 50%;
+            cursor: pointer; border: 3px solid rgba(255,255,255,0.1);
+            transition: transform 0.2s;
+        }
+        .paint:active { transform: scale(0.9); }
+        .paint.active { border-color: #fff; transform: scale(1.15); box-shadow: 0 0 10px rgba(255,255,255,0.5); }
+
+        /* Cores NRs */
+        .c-green { background: #22c55e; }
+        .c-red { background: #ef4444; }
+        .c-brown { background: #854d0e; }
+        .c-yellow { background: #eab308; }
+        .c-blue { background: #3b82f6; }
+
+        /* 4. Timer Bar */
+        .timer-track {
+            width: 100%; height: 8px; background: rgba(255,255,255,0.1);
+            border-radius: 4px; overflow: hidden; margin-bottom: 20px; display: none;
+        }
+        .timer-fill {
+            height: 100%; background: var(--danger); width: 100%;
+            transition: width 1s linear;
+        }
+
+        /* 5. Sequência */
+        .seq-item {
+            background: rgba(255,255,255,0.05); padding: 15px;
+            border-radius: 10px; margin-bottom: 8px; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center;
+            border: 1px dashed rgba(255,255,255,0.2);
+        }
+        .seq-item.picked {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid var(--success);
+        }
+        .seq-num {
+            background: rgba(255,255,255,0.1); width: 24px; height: 24px;
+            border-radius: 50%; font-size: 0.8rem; font-weight: bold;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .seq-item.picked .seq-num { background: var(--success); color: #000; }
+
+        /* 6. Binário (Ato vs Condição / EPI vs EPC) */
+        .binary-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; height: 100%; }
+        .binary-btn {
+            background: rgba(255,255,255,0.03); border: 2px solid transparent; border-radius: 16px;
+            padding: 20px; cursor: pointer; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; text-align: center; gap: 10px;
+            transition: all 0.2s;
+        }
+        .binary-btn:hover { background: rgba(255,255,255,0.05); }
+        .binary-btn.selected { border-color: var(--primary); background: rgba(99, 102, 241, 0.1); }
+        .binary-icon { font-size: 2.5rem; }
+
+        /* --- BOTÃO DE AÇÃO --- */
+        .footer { margin-top: auto; padding-top: 20px; }
+        
+        .btn-primary {
+            width: 100%;
+            padding: 18px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px var(--primary-glow);
+        }
+
+        .btn-primary:active { transform: translateY(2px); box-shadow: none; }
+        .btn-primary:disabled {
+            background: #334155; color: #64748b;
+            box-shadow: none; cursor: not-allowed;
+        }
+
+        /* --- TELAS DE FEEDBACK E INICIO --- */
+        .overlay-screen {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background: rgba(15, 23, 42, 0.98);
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 30px;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+        }
+
+        .big-icon { font-size: 4rem; margin-bottom: 20px; animation: bounce 1s infinite; }
+        .title-lg { font-family: var(--font-display); font-size: 2rem; margin: 0 0 10px 0; color: #fff; }
+        .subtitle { color: var(--text-muted); font-size: 1rem; margin-bottom: 30px; line-height: 1.5; }
+
+        /* Utilitários */
+        .hidden { display: none !important; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        .shake { animation: shake 0.4s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    
+    <!-- CABEÇALHO -->
+    <header>
+        <div class="brand">
+            <i data-lucide="shield-check" size="24"></i>
+            <span>Lab de Segurança</span>
+        </div>
+        <div class="stats-bar">
+            <div class="stat life">
+                <i data-lucide="heart" fill="#ef4444" size="18"></i>
+                <span id="hp-display">3</span>
+            </div>
+            <div class="stat xp">
+                <i data-lucide="zap" fill="#10b981" size="18"></i>
+                <span id="xp-display">0</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="card-area">
+        
+        <!-- TELA INICIAL -->
+        <div id="start-screen" class="card" style="justify-content: center; align-items: center; text-align: center;">
+            <div class="big-icon">🛡️</div>
+            <h1 class="title-lg">DESAFIO<br><span style="color: var(--primary);">TRABALHO SEGURO</span></h1>
+            <p class="subtitle">Você consegue terminar o turno sem acidentes?<br>15 Desafios práticos e focados na operação.</p>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 30px; flex-wrap: wrap; justify-content: center;">
+                <span class="tag">EPI vs EPC</span>
+                <span class="tag">Mapa de Riscos</span>
+                <span class="tag">Prevenção & Conduta</span>
+            </div>
+
+            <button class="btn-primary" onclick="startGame()">Bater o Ponto ▶</button>
+        </div>
+
+        <!-- TELA DE JOGO -->
+        <div id="game-screen" class="card hidden">
+            <div class="scene-header">
+                <span class="tag" id="tag-level">NR-06</span>
+                <span style="font-size: 0.9rem; font-weight: bold; color: #64748b;" id="level-indicator">1/15</span>
+            </div>
+            
+            <div class="timer-track" id="timer-box">
+                <div class="timer-fill" id="timer-bar"></div>
+            </div>
+
+            <div class="question" id="question-text">...</div>
+            
+            <!-- Área Dinâmica -->
+            <div id="interactive-area"></div>
+
+            <div class="footer">
+                <button class="btn-primary" id="btn-action" onclick="checkAnswer()">CONFIRMAR</button>
+            </div>
+
+            <!-- Overlay de Feedback -->
+            <div id="feedback-overlay" class="overlay-screen hidden">
+                <div class="big-icon" id="fb-icon">✅</div>
+                <h2 class="title-lg" id="fb-title">CORRETO</h2>
+                <p class="subtitle" id="fb-msg">...</p>
+                <button class="btn-primary" id="fb-btn">CONTINUAR</button>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    lucide.createIcons();
+
+    // ESTADO DO JOGO
+    let gameState = {
+        hp: 3,
+        xp: 0,
+        currentLevel: 0,
+        tempData: null, // Armazena seleções temporárias
+        timer: null
+    };
+
+    // BANCO DE QUESTÕES (Conteúdo Expandido para 15 Níveis Práticos)
+    const levels = [
+        // 1. EPI (NR-6)
+        {
+            type: 'inventory',
+            tag: 'NR-06: EPI',
+            question: 'Prepare-se para entrar no estoque. Selecione APENAS os <strong>EPIs obrigatórios</strong>:',
+            items: [
+                { id: 'bone', icon: '🧢', label: 'Boné', correct: false },
+                { id: 'bota', icon: '🥾', label: 'Bota', correct: true },
+                { id: 'fone', icon: '🎧', label: 'Fone', correct: false },
+                { id: 'oculos', icon: '👓', label: 'Óculos', correct: true }
+            ],
+            feedbackOk: "Exato! Botas protegem os pés e óculos protegem a visão. Boné e fone não são EPIs.",
+            feedbackErr: "Inseguro! Verifique se selecionou apenas os itens de proteção real e removeu os acessórios."
+        },
+        // 2. EPC (Conceito)
+        {
+            type: 'binary',
+            tag: 'CONCEITO: EPC',
+            question: 'O que define um <strong>Cone de Sinalização</strong>?',
+            left: { label: 'Proteção Individual (EPI)', icon: '👤', correct: false },
+            right: { label: 'Proteção Coletiva (EPC)', icon: '👥', correct: true },
+            feedbackOk: "Correto! O cone sinaliza perigo para TODA a equipe, por isso é coletivo.",
+            feedbackErr: "Errado. O cone isola a área para todos, não protege apenas uma pessoa (Individual)."
+        },
+        // 3. Ergonomia (NR-17)
+        {
+            type: 'ergo_hunt',
+            tag: 'NR-17: ERGONOMIA',
+            question: 'Encontre e corrija <strong>3 erros</strong> nesta estação de trabalho (Toque para corrigir):',
+            hazards: [
+                { id: 'h1', icon: '🖥️', label: 'Monitor Baixo', correct: true },
+                { id: 'h2', icon: '🪑', label: 'Cadeira Quebrada', correct: true },
+                { id: 'h3', icon: '🌵', label: 'Planta Seca', correct: false },
+                { id: 'h4', icon: '💡', label: 'Luz Piscando', correct: true }
+            ],
+            feedbackOk: "Muito bem! Ergonomia e conforto ambiental previnem lesões a longo prazo.",
+            feedbackErr: "Faltou corrigir algo! O conforto visual e postural é lei (NR-17)."
+        },
+        // 4. Mapa de Risco (Químico)
+        {
+            type: 'color',
+            tag: 'MAPA DE RISCOS',
+            question: 'Detectamos um vazamento de Cloro (Risco Químico). Qual a cor desse risco no mapa?',
+            correctColor: 'red',
+            feedbackOk: "Boa! VERMELHO é a cor universal para riscos Químicos.",
+            feedbackErr: "Cuidado! Vermelho = Químico. Verde = Físico. Marrom = Biológico."
+        },
+        // 5. Comportamento Seguro
+        {
+            type: 'choice',
+            tag: 'COMPORTAMENTO SEGURO',
+            question: 'Um colega está sem luvas na máquina. O que você faz?',
+            options: [
+                { text: 'Ignoro, cada um sabe de si.', correct: false },
+                { text: 'Alertei sobre o risco imediatamente.', correct: true },
+                { text: 'Riu da situação.', correct: false }
+            ],
+            feedbackOk: "Isso é atitude prevencionista! Segurança é cuidar de si e do outro.",
+            feedbackErr: "A omissão permite acidentes. É dever de todos alertar sobre riscos."
+        },
+        // 6. Manutenção (LOTO)
+        {
+            type: 'sequence',
+            tag: 'MANUTENÇÃO',
+            question: 'Coloque as ações de manutenção na ordem segura:',
+            items: [
+                { id: 1, text: 'Desligar Energia' },
+                { id: 2, text: 'Bloquear/Sinalizar' },
+                { id: 3, text: 'Iniciar Reparo' }
+            ],
+            correctOrder: [1, 2, 3],
+            feedbackOk: "Perfeito! O bloqueio de energia salva vidas.",
+            feedbackErr: "Ordem perigosa! Nunca inicie o reparo sem bloquear a energia antes."
+        },
+        // 7. Inspeção
+        {
+            type: 'choice',
+            tag: 'INSPEÇÃO',
+            question: 'Você viu um extintor com o lacre rompido. O que fazer?',
+            options: [
+                { text: 'Usar assim mesmo.', correct: false },
+                { text: 'Reprovar e solicitar troca.', correct: true }
+            ],
+            feedbackOk: "Olho vivo! Equipamento violado pode falhar na hora H.",
+            feedbackErr: "Gravíssimo! Nunca aprove equipamentos de segurança danificados."
+        },
+        // 8. Responsabilidade
+        {
+            type: 'choice',
+            tag: 'RESPONSABILIDADE',
+            question: 'De quem é a responsabilidade pela segurança na empresa?',
+            options: [
+                { text: 'Apenas do Técnico de Segurança.', correct: false },
+                { text: 'De TODOS (Compartilhada).', correct: true }
+            ],
+            feedbackOk: "Exato! A segurança é dever de todos.",
+            feedbackErr: "Errado. Segundo as normas, todos têm o dever de prevenir acidentes."
+        },
+        // 9. Ato vs Condição
+        {
+            type: 'binary',
+            tag: 'CONCEITOS BÁSICOS',
+            question: 'Um colega está <strong>correndo nas escadas</strong>. Isso é um:',
+            left: { label: 'ATO Inseguro', icon: '🏃', correct: true },
+            right: { label: 'CONDIÇÃO Insegura', icon: '🏢', correct: false },
+            feedbackOk: "Correto! Ato Inseguro depende do comportamento humano. Condição é do ambiente.",
+            feedbackErr: "Errado! Correr é uma escolha da pessoa (Ato). Condição seria se a escada estivesse quebrada."
+        },
+        // 10. Risco Biológico (Mapa)
+        {
+            type: 'color',
+            tag: 'MAPA DE RISCOS',
+            question: 'Banheiros e lixo hospitalar apresentam risco de vírus e bactérias (Biológico). Qual a cor?',
+            correctColor: 'brown',
+            feedbackOk: "Excelente! MARROM representa riscos Biológicos.",
+            feedbackErr: "Incorreto. A cor do risco Biológico é MARROM."
+        },
+        // 11. Organização (5S) - Substituindo CNV
+        {
+            type: 'choice',
+            tag: 'ORGANIZAÇÃO (5S)',
+            question: 'Caixas vazias estão bloqueando o acesso ao extintor. Qual a ação correta?',
+            options: [
+                { text: 'Deixar lá, não tem fogo agora.', correct: false },
+                { text: 'Remover as caixas e liberar o acesso.', correct: true }
+            ],
+            feedbackOk: "Muito bem! Equipamentos de emergência devem estar sempre desobstruídos.",
+            feedbackErr: "Erro grave! Em uma emergência, esses segundos perdidos podem custar caro."
+        },
+        // 12. Prevenção de Incêndio (Classes)
+        {
+            type: 'binary',
+            tag: 'NR-23: INCÊNDIO',
+            question: 'Fogo em um <strong>computador</strong> (Equipamento Elétrico Energizado). Posso usar água?',
+            left: { label: 'NÃO (Risco de Choque)', icon: '⚡', correct: true },
+            right: { label: 'SIM (Apaga tudo)', icon: '💦', correct: false },
+            feedbackOk: "Salvou vidas! Água conduz eletricidade. Use CO2 ou Pó Químico em equipamentos elétricos.",
+            feedbackErr: "PERIGO! Jogar água em equipamentos energizados causa choque elétrico fatal."
+        },
+        // 13. Regras da Empresa (Crachá)
+        {
+            type: 'choice',
+            tag: 'NORMAS DA EMPRESA',
+            question: 'O supervisor chamou sua atenção por esquecer o crachá de identificação. Qual a conduta certa?',
+            options: [
+                { text: 'Dar desculpas e culpar a pressa.', correct: false },
+                { text: 'Colocar imediatamente e pedir desculpas.', correct: true },
+                { text: 'Ignorar a regra.', correct: false }
+            ],
+            feedbackOk: "Profissional! Seguir as normas de identificação é parte da segurança patrimonial e pessoal.",
+            feedbackErr: "O crachá é sua identificação. Recusar-se a usar é indisciplina."
+        },
+        // 14. Risco Elétrico - Substituindo Comunicação
+        {
+            type: 'binary',
+            tag: 'RISCO ELÉTRICO',
+            question: 'Você encontrou uma tomada sobrecarregada com vários adaptadores ("T").',
+            left: { label: 'Deixar como está', icon: '🔌', correct: false },
+            right: { label: 'Relatar o risco', icon: '⚠️', correct: true },
+            feedbackOk: "Certo! Sobrecarga elétrica é uma das maiores causas de incêndio.",
+            feedbackErr: "Perigoso! O superaquecimento pode iniciar um incêndio a qualquer momento."
+        },
+        // 15. Incêndio (Reflexo Final)
+        {
+            type: 'reflex',
+            tag: 'NR-23: EMERGÊNCIA',
+            question: '🔥 ALARME TOCOU! Você tem 5 segundos para escolher a rota de fuga!',
+            duration: 5,
+            options: [
+                { label: 'ELEVADOR', correct: false },
+                { label: 'ESCADA', correct: true },
+                { label: 'BANHEIRO', correct: false }
+            ],
+            feedbackOk: "Salvo! Escadas são a única rota segura em incêndios.",
+            feedbackErr: "FATAL! Elevadores podem travar e banheiros viram armadilhas."
+        }
+    ];
+
+    // --- LÓGICA DO JOGO ---
+
+    function startGame() {
+        gameState.hp = 3;
+        gameState.xp = 0;
+        gameState.currentLevel = 0;
+        updateHUD();
+        
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('game-screen').classList.remove('hidden');
+        loadLevel();
+    }
+
+    function updateHUD() {
+        document.getElementById('hp-display').innerText = gameState.hp;
+        document.getElementById('xp-display').innerText = gameState.xp;
+    }
+
+    function loadLevel() {
+        if(gameState.currentLevel >= levels.length) {
+            endGame(true);
+            return;
+        }
+
+        const level = levels[gameState.currentLevel];
+        
+        // Reset UI
+        document.getElementById('tag-level').innerText = level.tag;
+        document.getElementById('level-indicator').innerText = `${gameState.currentLevel + 1}/${levels.length}`;
+        document.getElementById('question-text').innerHTML = level.question;
+        document.getElementById('feedback-overlay').classList.add('hidden');
+        document.getElementById('timer-box').style.display = 'none';
+        document.getElementById('btn-action').style.display = 'block';
+        document.getElementById('btn-action').disabled = false;
+        
+        const area = document.getElementById('interactive-area');
+        area.innerHTML = '';
+        gameState.tempData = null; // Limpa seleção
+
+        // RENDERIZADORES
+        if (level.type === 'inventory') {
+            gameState.tempData = [];
+            let html = '<div class="grid-2">';
+            level.items.forEach(i => {
+                html += `<div class="item-box" id="item-${i.id}" onclick="toggleInv('${i.id}')">
+                    <span class="item-icon">${i.icon}</span><span class="item-label">${i.label}</span>
+                </div>`;
+            });
+            html += '</div>';
+            area.innerHTML = html;
+        }
+        else if (level.type === 'choice') {
+            level.options.forEach((opt, idx) => {
+                area.innerHTML += `<div class="choice-btn" id="opt-${idx}" onclick="selectOption(${idx})">
+                    <div class="check-circle"></div>${opt.text}
+                </div>`;
+            });
+        }
+        else if (level.type === 'binary') {
+            gameState.tempData = null;
+            area.innerHTML = `<div class="binary-container">
+                <div class="binary-btn" id="bin-left" onclick="selectBinary('left')">
+                    <span class="binary-icon">${level.left.icon}</span>${level.left.label}
+                </div>
+                <div class="binary-btn" id="bin-right" onclick="selectBinary('right')">
+                    <span class="binary-icon">${level.right.icon}</span>${level.right.label}
+                </div>
+            </div>`;
+        }
+        else if (level.type === 'color') {
+            let html = '<div class="color-row">';
+            ['green', 'red', 'yellow', 'brown', 'blue'].forEach(c => {
+                html += `<div class="paint c-${c}" id="c-${c}" onclick="selectColor('${c}')"></div>`;
+            });
+            html += '</div>';
+            area.innerHTML = html;
+        }
+        else if (level.type === 'ergo_hunt') {
+            document.getElementById('btn-action').disabled = true;
+            document.getElementById('btn-action').innerText = "CORRIJA 3 ERROS";
+            gameState.tempData = 0; // Contador de correções
+            
+            let html = '<div class="grid-2">';
+            level.hazards.forEach(h => {
+                html += `<div class="item-box" id="hz-${h.id}" onclick="fixHazard('${h.id}', ${h.correct})">
+                    <span class="item-icon">${h.icon}</span><span class="item-label">${h.label}</span>
+                </div>`;
+            });
+            html += '</div>';
+            area.innerHTML = html;
+        }
+        else if (level.type === 'sequence') {
+            gameState.tempData = [];
+            level.items.forEach(i => {
+                area.innerHTML += `<div class="seq-item" id="seq-${i.id}" onclick="pickSeq(${i.id})">
+                    <span>${i.text}</span><div class="seq-num" id="badge-${i.id}"></div>
+                </div>`;
+            });
+        }
+        else if (level.type === 'reflex') {
+            document.getElementById('btn-action').style.display = 'none';
+            document.getElementById('timer-box').style.display = 'block';
+            
+            level.options.forEach((opt) => {
+                area.innerHTML += `<button class="btn-primary" style="margin-bottom:10px; background:#1e293b; border:1px solid #334155" onclick="resolveReflex(${opt.correct})">${opt.label}</button>`;
+            });
+
+            setTimeout(() => document.getElementById('timer-bar').style.width = '0%', 100);
+            gameState.timer = setTimeout(() => showFeedback(false, "O TEMPO ACABOU!"), level.duration * 1000);
+        }
+    }
+
+    // --- INTERAÇÕES ---
+
+    window.toggleInv = (id) => {
+        const el = document.getElementById(`item-${id}`);
+        if(gameState.tempData.includes(id)) {
+            gameState.tempData = gameState.tempData.filter(x => x !== id);
+            el.classList.remove('selected');
+        } else {
+            gameState.tempData.push(id);
+            el.classList.add('selected');
+        }
+    };
+
+    window.selectOption = (idx) => {
+        gameState.tempData = idx;
+        document.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('selected'));
+        document.getElementById(`opt-${idx}`).classList.add('selected');
+    };
+
+    window.selectBinary = (side) => {
+        gameState.tempData = side;
+        document.querySelectorAll('.binary-btn').forEach(b => b.classList.remove('selected'));
+        document.getElementById(`bin-${side}`).classList.add('selected');
+    };
+
+    window.selectColor = (color) => {
+        gameState.tempData = color;
+        document.querySelectorAll('.paint').forEach(p => p.classList.remove('active'));
+        document.getElementById(`c-${color}`).classList.add('active');
+    };
+
+    window.fixHazard = (id, correct) => {
+        const el = document.getElementById(`hz-${id}`);
+        if(el.classList.contains('fixed')) return;
+
+        if(correct) {
+            el.classList.add('fixed');
+            el.style.borderColor = "var(--success)";
+            el.querySelector('.item-label').innerText = "CORRIGIDO";
+            gameState.tempData++;
+            if(gameState.tempData >= 3) {
+                const btn = document.getElementById('btn-action');
+                btn.disabled = false;
+                btn.innerText = "CONFIRMAR";
+            }
+        } else {
+            el.style.borderColor = "var(--danger)";
+            el.classList.add('shake');
+            setTimeout(() => { el.style.borderColor = "transparent"; el.classList.remove('shake'); }, 500);
+        }
+    };
+
+    window.pickSeq = (id) => {
+        const el = document.getElementById(`seq-${id}`);
+        if(gameState.tempData.includes(id)) {
+            gameState.tempData = gameState.tempData.filter(x => x !== id);
+            el.classList.remove('picked');
+            el.querySelector('.seq-num').innerText = "";
+            // Reordenar visual
+            gameState.tempData.forEach((sid, idx) => {
+                document.getElementById(`badge-${sid}`).innerText = idx + 1;
+            });
+        } else {
+            if(gameState.tempData.length < 3) {
+                gameState.tempData.push(id);
+                el.classList.add('picked');
+                el.querySelector('.seq-num').innerText = gameState.tempData.length;
+            }
+        }
+    };
+
+    window.resolveReflex = (isCorrect) => {
+        clearTimeout(gameState.timer);
+        const level = levels[gameState.currentLevel];
+        showFeedback(isCorrect, isCorrect ? level.feedbackOk : level.feedbackErr);
+    };
+
+    // --- VALIDAÇÃO ---
+
+    window.checkAnswer = () => {
+        const level = levels[gameState.currentLevel];
+        let isCorrect = false;
+
+        if (level.type === 'inventory') {
+            const rightIds = level.items.filter(i => i.correct).map(i => i.id);
+            const wrongIds = level.items.filter(i => !i.correct).map(i => i.id);
+            isCorrect = rightIds.every(id => gameState.tempData.includes(id)) && 
+                        !wrongIds.some(id => gameState.tempData.includes(id));
+        }
+        else if (level.type === 'choice') {
+            if(gameState.tempData === null) return;
+            isCorrect = level.options[gameState.tempData].correct;
+        }
+        else if (level.type === 'binary') {
+            if(!gameState.tempData) return;
+            isCorrect = level[gameState.tempData].correct;
+        }
+        else if (level.type === 'color') {
+            if(!gameState.tempData) return;
+            isCorrect = gameState.tempData === level.correctColor;
+        }
+        else if (level.type === 'ergo_hunt') {
+            isCorrect = gameState.tempData >= 3;
+        }
+        else if (level.type === 'sequence') {
+            if(gameState.tempData.length < 3) return;
+            isCorrect = JSON.stringify(gameState.tempData) === JSON.stringify(level.correctOrder);
+        }
+
+        showFeedback(isCorrect, isCorrect ? level.feedbackOk : level.feedbackErr);
+    };
+
+    function showFeedback(correct, msg) {
+        const overlay = document.getElementById('feedback-overlay');
+        const icon = document.getElementById('fb-icon');
+        const title = document.getElementById('fb-title');
+        const text = document.getElementById('fb-msg');
+        
+        overlay.classList.remove('hidden');
+        
+        if(correct) {
+            gameState.xp += 150;
+            icon.innerText = "✅";
+            title.innerText = "MANDOU BEM!";
+            title.style.color = "var(--success)";
+            confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+        } else {
+            gameState.hp--;
+            icon.innerText = "⚠️";
+            title.innerText = "ATENÇÃO!";
+            title.style.color = "var(--danger)";
+        }
+        
+        text.innerText = msg;
+        updateHUD();
+
+        document.getElementById('fb-btn').onclick = () => {
+            if(gameState.hp <= 0) endGame(false);
+            else {
+                gameState.currentLevel++;
+                loadLevel();
+            }
+        };
+    }
+
+    function endGame(win) {
+        const gameScreen = document.getElementById('game-screen');
+        const startScreen = document.getElementById('start-screen');
+        
+        gameScreen.classList.add('hidden');
+        startScreen.classList.remove('hidden'); // Reutiliza a tela inicial como final
+        
+        let html = '';
+        if(win) {
+             html = `<div class="big-icon">🏆</div>
+                <h1 class="title-lg" style="color:var(--success)">APROVADO!</h1>
+                <p class="subtitle">Pontuação Final: ${gameState.xp}<br>Você é um Mestre da Segurança!</p>`;
+             confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
+        } else {
+             html = `<div class="big-icon">🩹</div>
+                <h1 class="title-lg" style="color:var(--danger)">REPROVADO</h1>
+                <p class="subtitle">Muitos riscos não identificados.<br>Revise as Normas e tente novamente.</p>`;
+        }
+        
+        html += `<button class="btn-primary" onclick="startGame()">TENTAR NOVAMENTE 🔄</button>`;
+        
+        startScreen.innerHTML = `<div style="text-align:center; padding:20px;">${html}</div>`;
+    }
+
+</script>
+
+</body>
+</html>
